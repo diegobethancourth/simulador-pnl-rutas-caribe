@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador P&amp;L de rutas · China → Barbados</title>
+<link rel="stylesheet" href="leaflet.css">
+<style>
+:root{--azul:#0C447C;--azul2:#1E5A9E;--fondo:#ececec;--borde:#b9c0c9;--papel:#fff;--tinta:#1d2733;--gris:#5f6b78;
+ --rojo:#c0392b;--ambar:#b7791f;--verde:#2e7d32;
+ --p-rojo:#f6d5d1;--p-ambar:#fbe8c8;--p-verde:#d6efdc;--p-gris:#e2e5e9;--p-azul:#d7e5f4;
+ --c-dir:#1E5A9E;--c-hub:#C77700;--c-org:#7d838c;color-scheme:light}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--fondo);color:var(--tinta);font:14px/1.45 "Segoe UI",Calibri,system-ui,sans-serif}
+.num{font-family:Consolas,"Cascadia Mono","Courier New",monospace;font-variant-numeric:tabular-nums}
+header{background:linear-gradient(90deg,#0b1f3a,#133a74);color:#fff;display:flex;align-items:center;gap:14px;padding:10px 20px;flex-wrap:wrap}
+header h1{margin:0;font-size:18px;font-weight:600}header .sub{font-size:12px;color:#cfe0f2}
+.der{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fr{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);padding:4px 9px;font-size:11.5px;color:#e8f0f9}
+.hbtn{font:inherit;font-size:13px;background:#fff;color:var(--azul);font-weight:700;border:1px solid #fff;padding:7px 14px;cursor:pointer}
+.barra{position:sticky;top:0;z-index:20;background:var(--papel);border-bottom:1px solid var(--borde);padding:8px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--borde)}
+.seg button{font:inherit;font-size:13px;background:#fff;color:var(--tinta);border:0;border-right:1px solid var(--borde);padding:6px 12px;cursor:pointer}
+.seg button:last-child{border-right:0}.seg button.on{background:var(--azul);color:#fff;font-weight:600}
+.lbl{color:var(--gris);font-size:12.5px}
+.tabs{display:flex;gap:4px;margin-left:auto}
+.tabs button{font:inherit;font-size:13.5px;background:var(--p-gris);border:1px solid var(--borde);border-bottom:3px solid transparent;padding:7px 14px;cursor:pointer;color:var(--tinta)}
+.tabs button.on{background:#fff;border-bottom-color:var(--azul);font-weight:700;color:var(--azul)}
+.wrap{display:grid;grid-template-columns:350px minmax(0,1fr);gap:14px;padding:14px 20px;align-items:start}
+aside{background:var(--papel);border:1px solid var(--borde);padding:14px 16px;position:sticky;top:58px;max-height:calc(100vh - 72px);overflow:auto}
+h2{font-size:13.5px;color:var(--azul);margin:14px 0 8px;font-weight:700}h2:first-child{margin-top:0}
+.f{display:grid;grid-template-columns:1fr 96px;align-items:center;gap:8px;margin:6px 0}
+.f label{font-size:13.5px}
+.f input{width:100%;font:inherit;font-size:14px;border:1px solid var(--borde);padding:5px 7px;text-align:right;background:#fbfcfd}
+.trig{border:1px solid var(--borde);background:#fff;padding:8px 10px;margin:7px 0}
+.trig.on{background:var(--p-rojo);border-color:#e3a59d}.trig.lever.on{background:var(--p-verde);border-color:#9fcfab}
+.trig .top{display:flex;gap:8px;align-items:flex-start;cursor:pointer}.trig .top input{margin-top:3px}
+.trig b{font-size:13.5px;font-weight:600}
+.trig .desc{color:var(--gris);font-size:12.5px;margin:3px 0 0 22px;line-height:1.35}
+.trig .rng{display:none;margin:6px 0 0 22px;align-items:center;gap:8px}.trig.on .rng{display:flex}
+.trig .rng input{flex:1;accent-color:var(--azul)}.trig .rng output{min-width:64px;text-align:right;font-weight:700;color:var(--azul)}
+details{margin-top:12px;border-top:1px solid var(--borde);padding-top:8px}summary{cursor:pointer;color:var(--azul);font-weight:600;font-size:13.5px}
+main{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--papel);border:1px solid var(--borde);padding:12px 16px}
+.cardh{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.cardh h3{margin:0;font-size:15px;color:var(--azul)}.cardh .sp{margin-left:auto;display:flex;gap:10px;align-items:center}
+.play{font:inherit;font-size:13px;background:var(--azul);color:#fff;border:0;padding:7px 14px;font-weight:700;cursor:pointer}
+input[type=range].scrub{width:170px;accent-color:var(--azul)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.kpi{border:1px solid var(--borde);padding:12px 14px;background:var(--bgc)}
+.kpi .nm{font-weight:700;font-size:14.5px;color:var(--c)}.kpi .rt{color:var(--gris);font-size:12px;margin-bottom:6px}
+.kpi .big{font-size:26px;font-weight:700;margin:2px 0}.kpi .row{display:flex;justify-content:space-between;font-size:13px;margin:2px 0}
+.pos{color:var(--verde)}.neg{color:var(--rojo)}
+#map{height:420px;border:1px solid var(--borde);background:#eef3f8}
+.leaflet-tooltip.port{background:transparent;border:0;box-shadow:none;font-weight:600;color:#33414f;font-size:12px;padding:0}
+.leaflet-tooltip.port:before{display:none}
+#map:not(.zin) .leaflet-tooltip.minor{display:none}
+.leaflet-tooltip.cost{font-weight:700;font-size:12.5px;padding:2px 6px;border-radius:3px}
+.leaflet-tooltip.alert{background:var(--p-rojo);border:1px solid #e3a59d;color:var(--rojo);font-weight:700;font-size:12px}
+.box{width:24px;height:14px;border:1.5px solid #fff;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.35);background-image:repeating-linear-gradient(90deg,transparent 0 4px,rgba(255,255,255,.55) 4px 5px)}
+.fig{position:relative;height:340px}.fig svg{position:absolute;inset:0;width:100%;height:100%}
+.legend{display:flex;gap:16px;flex-wrap:wrap;color:var(--gris);font-size:12.5px;margin-top:6px}.legend i{display:inline-block;width:20px;height:3px;vertical-align:middle;margin-right:6px}
+.insight{font-size:14px;line-height:1.55}.insight b{color:var(--azul)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:6px 8px;border-bottom:1px solid #dde1e6;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal}
+thead th{background:var(--p-gris);color:#33414f;font-weight:700;border-bottom:1px solid var(--borde)}
+tr.sub td{font-weight:700;background:#f6f7f9}tr.tot td{font-weight:700;background:var(--p-azul);border-top:1px solid var(--borde)}
+td.pct{color:var(--gris);font-size:12.5px}
+.scroll{overflow-x:auto}
+.view{display:none}.view.on{display:flex;flex-direction:column;gap:14px}
+.src li{margin:6px 0}.src a{color:var(--azul2)}
+.mini{font-size:12.5px;color:var(--gris)}
+.tour-bg{position:fixed;inset:0;z-index:2000;display:none}.tour-bg.open{display:block}
+.tour-hl{position:fixed;border:3px solid #f0a020;border-radius:4px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);transition:all .25s;pointer-events:none}
+.tour-box{position:fixed;background:#fff;border-radius:4px;padding:14px 16px;width:360px;box-shadow:0 4px 18px rgba(0,0,0,.3);font-size:13.5px;transition:all .25s}
+.tour-box h4{margin:0 0 6px;color:var(--azul);font-size:15px}.tour-box .pie{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.tour-box button{font:inherit;font-size:13px;border:1px solid var(--borde);background:#fff;padding:5px 12px;cursor:pointer}.tour-box button.pri{background:var(--azul);color:#fff;border-color:var(--azul);font-weight:700}
+@media(max-width:1000px){.wrap{grid-template-columns:1fr}aside{position:static;max-height:none}.kpis{grid-template-columns:1fr}.tabs{margin-left:0}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Simulador P&amp;L de rutas · China → Barbados</h1>
+  <div class="sub">Costo aterrizado, margen bruto y margen neto por contenedor 40HQ · ruta directa de la naviera vs. hub Panamá (Zona Libre de Colón)</div></div>
+  <div class="der"><span class="fr">Supuestos de mercado · nov-2026</span><button class="hbtn" id="btnTour">Ayuda y recorrido guiado</button></div>
+</header>
+<div class="barra">
+  <span class="lbl">Escenario</span>
+  <div class="seg" id="presets">
+    <button data-p="hoy" class="on">Hoy (flete duplicado)</button><button data-p="peak">Temporada alta + congestión</button><button data-p="aduana">Problema en aduana</button><button data-p="cons">Hub consolidado</button>
+  </div>
+  <div class="tabs" id="tabs"><button data-v="viaje" class="on">Viaje y costos</button><button data-v="pnl">Estado de resultados (P&amp;L)</button><button data-v="sup">Supuestos y fuentes</button></div>
+</div>
+<div class="wrap">
+<aside id="panel">
+  <h2>Producto y negocio</h2>
+  <div id="negocio">
+  <div class="f"><label for="units">Unidades por contenedor</label><input id="units" type="number" value="2500"></div>
+  <div class="f"><label for="fob">Costo FOB por unidad (US$)</label><input id="fob" type="number" step="0.1" value="8"></div>
+  <div class="f"><label for="price">Precio de venta por unidad (US$)</label><input id="price" type="number" step="0.1" value="16"></div>
+  <div class="f"><label for="duty">Arancel Barbados (%)</label><input id="duty" type="number" value="20"></div>
+  <div class="f"><label for="opex">Gastos operativos (% de venta)</label><input id="opex" type="number" value="12"></div>
+  <div class="f"><label for="target">Margen neto objetivo (%)</label><input id="target" type="number" value="5"></div>
+  <div class="f"><label for="capital">Costo de capital anual (%)</label><input id="capital" type="number" value="10"></div>
+  </div>
+  <h2>Triggers: eventos de la cadena</h2><div id="triggers"></div>
+  <h2>Palancas</h2><div id="levers"></div>
+  <details id="base"><summary>Costos base por ruta (poner cotizaciones reales)</summary>
+    <div class="f"><label for="fDirect">Directo: tarifa naviera China → Bridgetown</label><input id="fDirect" type="number" value="9300"></div>
+    <div class="f"><label for="fOrig">PNL original: tarifa presupuestada</label><input id="fOrig" type="number" value="4650"></div>
+    <div class="f"><label for="fLeg1">Hub: China → Colón (MIT)</label><input id="fLeg1" type="number" value="5000"></div>
+    <div class="f"><label for="fFeeder">Hub: feeder Colón → Bridgetown</label><input id="fFeeder" type="number" value="2200"></div>
+    <div class="f"><label for="zlcVar">Hub: manejo ZLC variable</label><input id="zlcVar" type="number" value="500"></div>
+    <div class="f"><label for="zlcFix">Hub: manejo ZLC fijo por embarque</label><input id="zlcFix" type="number" value="400"></div>
+    <div class="f"><label for="dest">Cargos destino Bridgetown</label><input id="dest" type="number" value="600"></div>
+    <div class="f"><label for="feeD">Honorario agente (directo)</label><input id="feeD" type="number" value="150"></div>
+    <div class="f"><label for="feeHfix">Honorario hub: fijo por embarque</label><input id="feeHfix" type="number" value="200"></div>
+    <div class="f"><label for="free">Días libres en Bridgetown</label><input id="free" type="number" value="10"></div>
+    <div class="f"><label for="dmr">Demora por día, 40' (US$)</label><input id="dmr" type="number" value="100"></div>
+  </details>
+</aside>
+
+<main>
+ <section class="view on" id="v-viaje">
+  <div class="kpis" id="kpis"></div>
+  <div class="card" id="cardMap">
+    <div class="cardh"><h3>El viaje del contenedor</h3>
+      <div class="seg" id="mapView"><button data-m="full" class="on">Ruta completa</button><button data-m="car">Panamá – Caribe</button></div>
+      <div class="sp"><button class="play" id="play">▶ Reproducir viaje</button><input class="scrub" id="scrub" type="range" min="0" max="80" step="0.1" value="80"><span class="num" id="dayLbl">Día 80</span></div></div>
+    <div id="map"></div>
+  </div>
+  <div class="card" id="cardChart">
+    <div class="cardh"><h3>Línea de costos acumulados vs. ingreso</h3><span class="mini">US$ por contenedor · cada escalón es un costo que entra</span></div>
+    <div class="fig"><svg id="chart"></svg></div>
+    <div class="legend"><span><i style="background:var(--c-dir)"></i>Directo naviera</span><span><i style="background:var(--c-hub)"></i>Hub Panamá ZLC</span><span><i style="background:var(--c-org)"></i>PNL original</span><span><i style="background:var(--verde)"></i>Ingreso por ventas</span><span><i style="background:repeating-linear-gradient(90deg,var(--verde) 0 4px,transparent 4px 8px)"></i>Ingreso − gastos operativos</span></div>
+  </div>
+  <div class="card" id="cardInsight"><div class="cardh"><h3>Lectura</h3></div><div class="insight" id="insight"></div></div>
+ </section>
+
+ <section class="view" id="v-pnl">
+  <div class="card" id="cardPnl">
+    <div class="cardh"><h3>Estado de resultados por ruta</h3>
+      <span class="lbl">Ver por</span><div class="seg" id="per"><button data-u="cont" class="on">Contenedor</button><button data-u="unit">Unidad</button><button data-u="year">Año</button></div>
+      <span class="lbl" id="yrBox" style="display:none">Contenedores por año <input id="perYear" type="number" value="12" style="width:64px;font:inherit;border:1px solid var(--borde);padding:3px 6px;text-align:right"></span>
+      <div class="sp"><button class="hbtn" style="border-color:var(--borde)" id="copy">Copiar tabla</button><span class="mini" id="copied"></span></div></div>
+    <div class="scroll"><table id="pnl"></table></div>
+  </div>
+  <div class="card" id="cardWf">
+    <div class="cardh"><h3>Del ingreso al margen neto</h3><div class="seg" id="wfRoute"><button data-r="direct">Directo</button><button data-r="hub" class="on">Hub Panamá</button><button data-r="orig">PNL original</button></div></div>
+    <div class="fig" style="height:360px"><svg id="wf"></svg></div>
+  </div>
+ </section>
+
+ <section class="view" id="v-sup">
+  <div class="card"><div class="cardh"><h3>Cómo calcula el modelo</h3></div>
+   <ul class="src">
+    <li><b>Valor CIF</b> = mercancía FOB + todos los fletes y el manejo hasta Bridgetown + seguro (0.3%). Barbados cobra el arancel (CET CARICOM) y el levy ambiental de 1% sobre el CIF, así que cada US$1 de flete cuesta más de US$1 en el P&amp;L.</li>
+    <li>El IVA de 17.5% no entra al P&amp;L: es recuperable para el importador registrado.</li>
+    <li><b>Costo financiero</b>: valor FOB × costo de capital × días hasta liberar la carga ÷ 365.</li>
+    <li><b>Demoras</b>: días en Bridgetown por encima de los días libres × tarifa diaria del contenedor.</li>
+    <li><b>Flete máximo</b>: el flete total que todavía permite el margen neto objetivo.</li>
+    <li>La consolidación reparte entre los contenedores del embarque la parte fija del manejo en ZLC y del honorario del forwarder.</li>
+    <li>Los números del producto (2,500 unidades, FOB US$8, venta US$16) son de ejemplo. El feeder Colón → Bridgetown y el manejo en ZLC son supuestos por cotizar.</li>
+   </ul></div>
+  <div class="card"><div class="cardh"><h3>Fuentes de las referencias (nov-2026)</h3></div>
+   <ul class="src">
+    <li>Tarifas FCL Shekou/Yantian → Barbados, ~US$9,100–9,550 por 40HQ, ~52 días: <a href="https://www.5688.cn/en/fcl/cnshe-bbbar">5688.cn</a></li>
+    <li>Shanghái → Manzanillo, Panamá, US$5,000 por 40HQ (salida 17-nov-2026): <a href="https://goodhopefreight.com/panama/2026-freight.html">Goodhope Freight</a></li>
+    <li>Días libres y demora en Barbados: <a href="https://www.maersk.com/local-information/north-america/barbados">Maersk, información local Barbados</a></li>
+    <li>Servicio feeder a Bridgetown vía Cartagena, Kingston y Caucedo: <a href="https://la.one-line.com/en/news/expansion-caribbean-one-barbados-service">ONE</a></li>
+    <li>IVA 17.5% y arancel basado en el CET de CARICOM: <a href="https://taxsummaries.pwc.com/barbados/corporate/other-taxes">PwC Tax Summaries</a></li>
+    <li>Arancel y levy ambiental de 1% calculados sobre CIF: <a href="https://www.stackry.com/duties-and-taxes/barbados">Stackry</a></li>
+   </ul></div>
+ </section>
+</main>
+</div>
+
+<div class="tour-bg" id="tour"><div class="tour-hl" id="tourHl"></div><div class="tour-box" id="tourBox"><h4 id="tourT"></h4><div id="tourX"></div>
+ <div class="pie"><span class="mini" id="tourN"></span><span><button id="tourPrev">Anterior</button> <button id="tourSkip">Cerrar</button> <button class="pri" id="tourNext">Siguiente</button></span></div></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="land.js"></script>
+<script>
+{
+const $=id=>document.getElementById(id);
+const fmt=v=>(v<0?'−$':'$')+Math.round(Math.abs(v)).toLocaleString('en-US');
+const fmt2=v=>(v<0?'−$':'$')+Math.abs(v).toFixed(2);
+const pct=v=>(v*100).toFixed(1)+'%';
+const COL={direct:'#1E5A9E',hub:'#C77700',orig:'#7d838c'};
+const NAME={direct:'Directo naviera',hub:'Hub Panamá ZLC',orig:'PNL original'};
+
+const TRIGGERS=[
+ {id:'t1',name:'Alza de flete transpacífico (GRI/PSS)',desc:'La naviera sube la tarifa desde Asia. Pega al tramo China → Panamá en ambas rutas.',min:5,max:100,val:25,unit:'%'},
+ {id:'t2',name:'Congestión en el puerto de transbordo',desc:'Kingston o Cartagena retienen la carga (rolled cargo). En la ruta directa nadie del cliente lo controla; en el hub el forwarder reprograma.',min:3,max:21,val:10,unit:' días'},
+ {id:'t3',name:'Temporada alta del feeder Caribe (sep–dic)',desc:'Presión de espacio en los feeders: recargo al feeder del hub y recargo PSS en la tarifa directa.',min:10,max:60,val:30,unit:'%'},
+ {id:'t4',name:'Restricción del Canal de Panamá',desc:'Calado limitado o cupos de tránsito: recargo y días extra para ambas rutas.',min:100,max:1000,val:300,unit:' US$'},
+ {id:'t5',name:'Retención aduanal en Bridgetown',desc:'Inspección o documentos incompletos. Pasados los días libres se cobra demora por día.',min:5,max:30,val:15,unit:' días'},
+ {id:'t6',name:'Reclasificación arancelaria',desc:'Aduana asigna otra partida y sube el arancel. Como se cobra sobre el CIF, también encarece el flete.',min:5,max:40,val:15,unit:' pts'},
+ {id:'t7',name:'Merma o daño por manipuleo',desc:'Unidades perdidas o dañadas. Más manipuleo en el hub (desconsolidación en ZLC) implica más riesgo.',min:0.5,max:5,val:1,unit:'%',step:0.5},
+];
+const LEVERS=[
+ {id:'l1',name:'Consolidar contenedores por embarque',desc:'Varios contenedores (u órdenes de varias islas) por embarque en ZLC reparten los costos fijos del hub y del agente.',min:2,max:8,val:3,unit:' cont.'},
+ {id:'l2',name:'Tarifa negociada por volumen',desc:'Descuento sobre el tramo China → Panamá que consigue un forwarder con volumen (contrato o NAC).',min:5,max:30,val:12,unit:'%'},
+];
+const state={on:{},val:{}};
+function buildToggles(list,el,lever){
+ list.forEach(t=>{state.val[t.id]=t.val;const d=document.createElement('div');d.className='trig'+(lever?' lever':'');d.id='box_'+t.id;
+  d.innerHTML=`<label class="top"><input type="checkbox" id="${t.id}"><b>${t.name}</b></label><div class="desc">${t.desc}</div>
+  <div class="rng"><input type="range" id="${t.id}_r" min="${t.min}" max="${t.max}" step="${t.step||1}" value="${t.val}" aria-label="${t.name}"><output id="${t.id}_o">${t.val}${t.unit}</output></div>`;
+  el.appendChild(d);
+  $(t.id).addEventListener('change',e=>{setOn(t.id,e.target.checked);clearPreset();});
+  $(t.id+'_r').addEventListener('input',e=>{state.val[t.id]=+e.target.value;$(t.id+'_o').textContent=e.target.value+t.unit;clearPreset();run();});});
+}
+function setOn(id,v,norun){state.on[id]=v;$(id).checked=v;$('box_'+id).classList.toggle('on',v);if(!norun)run();}
+function setVal(id,v){state.val[id]=v;$(id+'_r').value=v;const t=[...TRIGGERS,...LEVERS].find(x=>x.id===id);$(id+'_o').textContent=v+t.unit;}
+buildToggles(TRIGGERS,$('triggers'),false);buildToggles(LEVERS,$('levers'),true);
+
+function P(){const n=id=>+$(id).value;return{units:n('units'),fob:n('fob'),price:n('price'),duty:n('duty')/100,levy:0.01,ins:0.003,opex:n('opex')/100,target:n('target')/100,cap:n('capital')/100,
+ fDirect:n('fDirect'),fOrig:n('fOrig'),fLeg1:n('fLeg1'),fFeeder:n('fFeeder'),zlcVar:n('zlcVar'),zlcFix:n('zlcFix'),dest:n('dest'),feeD:n('feeD'),feeHfix:n('feeHfix'),free:n('free'),dmr:n('dmr')};}
+const T=id=>state.on[id]?state.val[id]:0;
+
+/* ---------- model ---------- */
+function simulate(key,p){
+ const ev=[],stops=[];const fobTot=p.units*p.fob;const orig=key==='orig';
+ const dutyRate=p.duty+(orig?0:T('t6')/100)+p.levy;
+ const canalDays=(!orig&&state.on.t4)?4:0,canalCost=orig?0:T('t4');
+ let freight=0;const fr=[];
+ const add=(day,label,cost,dutiable)=>{ev.push({day,label,cost});if(dutiable){freight+=cost;fr.push([label,cost]);}};
+ let arr,hold=(!orig&&state.on.t5)?T('t5'):0,merma=0,fee;
+ if(key!=='hub'){
+  const base=orig?p.fOrig:p.fDirect;const t1=orig?0:T('t1')/100;const pss=(!orig&&state.on.t3)?Math.round(base*0.35*T('t3')/100):0;const cong=orig?0:T('t2');
+  stops.push({n:'sha',d:0},{n:'sha',d:2});
+  add(2,'Flete naviera China → Bridgetown',base*(1+t1)+pss+canalCost,true);
+  stops.push({n:'bal',d:30+canalDays},{n:'col',d:31+canalDays},{n:'kin',d:38+canalDays},{n:'kin',d:40+canalDays+cong});
+  arr=52+canalDays+cong;stops.push({n:'bgi',d:arr});fee=p.feeD;merma=(!orig&&state.on.t7)?T('t7')*0.3/100:0;
+ } else {
+  const N=state.on.l1?state.val.l1:1,disc=state.on.l2?state.val.l2/100:0;const cong=state.on.t2?Math.round(T('t2')*0.3):0;
+  stops.push({n:'sha',d:0},{n:'sha',d:2});
+  add(2,'Flete tramo 1 China → Colón',p.fLeg1*(1+T('t1')/100)*(1-disc)+canalCost,true);
+  stops.push({n:'bal',d:29+canalDays},{n:'col',d:31+canalDays+cong});const c=31+canalDays+cong;
+  add(c+1,'Manejo ZLC (traslado, almacén, DMC)',p.zlcVar+p.zlcFix/N,true);
+  stops.push({n:'zlc',d:c+1},{n:'zlc',d:c+4});const pk=state.on.t3?3:0;
+  add(c+5+pk,'Feeder Colón → Bridgetown',p.fFeeder*(1+T('t3')/100),true);
+  stops.push({n:'col',d:c+5+pk});arr=c+14+pk;stops.push({n:'bgi',d:arr});
+  fee=150+p.feeHfix/N;merma=state.on.t7?T('t7')/100:0;
+ }
+ const insurance=p.ins*(fobTot+freight);ev.unshift({day:0,label:'Mercancía FOB + seguro',cost:fobTot+insurance});
+ const cif=fobTot+freight+insurance,duties=cif*dutyRate;
+ ev.push({day:arr,label:'Arancel + levy',cost:duties},{day:arr,label:'Destino + agente',cost:p.dest+fee});
+ const dem=Math.max(0,hold-p.free)*p.dmr,rel=arr+hold;if(dem>0)ev.push({day:rel,label:'Demoras',cost:dem});
+ stops.push({n:'bgi',d:rel});
+ const carry=fobTot*p.cap*rel/365,units=p.units*(1-merma),sales=units*p.price;
+ const landed=cif+duties+p.dest+fee+dem+carry,gross=sales-landed,opex=sales*p.opex,net=gross-opex;
+ const fmax=(sales*(1-p.opex-p.target)-p.dest-fee-dem-carry)/((1+p.ins)*(1+dutyRate))-fobTot;
+ return {key,ev,stops,arr,rel,fobTot,freight,fr,insurance,cif,duties,dest:p.dest,fee,dem,carry,sales,landed,gross,opex,net,fmax,units,dutyRate};
+}
+const costAt=(r,day,p)=>{let c=0;for(const e of r.ev)if(e.day<=day)c+=e.cost;return c+r.fobTot*p.cap*Math.min(day,r.rel)/365;};
+
+/* ---------- map ---------- */
+const PORTS={sha:[31.23,121.47,'Shanghái / Ningbo'],bal:[8.95,280.43,'Balboa · Canal'],col:[9.36,280.12,'Colón · MIT'],zlc:[9.35,280.10,'Zona Libre de Colón'],kin:[17.97,283.2,'Kingston'],ctg:[10.4,284.47,'Cartagena'],cau:[18.42,290.37,'Caucedo'],bgi:[13.1,300.38,'Bridgetown']};
+const PATHS={
+ direct:[['sha',[31.23,121.47]],[null,[30.5,128]],[null,[33,148]],[null,[31,175]],[null,[25,205]],[null,[17,235]],[null,[10,260]],[null,[7.2,276]],['bal',[8.95,280.43]],['col',[9.36,280.12]],[null,[12.5,281.3]],['kin',[17.97,283.2]],[null,[16.3,292]],[null,[13.8,298.5]],['bgi',[13.1,300.38]]],
+ hub:[['sha',[31.23,121.47]],[null,[30.5,128]],[null,[33,148]],[null,[31,175]],[null,[25,205]],[null,[17,235]],[null,[10,260]],[null,[7.2,276]],['bal',[8.95,280.43]],['col',[9.36,280.12]],['zlc',[9.35,280.10]],[null,[11.6,283.4]],[null,[13.7,291]],[null,[13.4,297.5]],['bgi',[13.1,300.38]]]};
+let map,boxes={},alertLayer,routeLines={};
+function dist(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1]);}
+const PATHMETA={};
+for(const k in PATHS){const pts=PATHS[k].map(x=>x[1]);const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+dist(pts[i-1],pts[i]));
+ const nodeAt={};PATHS[k].forEach((x,i)=>{if(x[0])nodeAt[x[0]]=cum[i];});PATHMETA[k]={pts,cum,nodeAt};}
+function pointAt(k,s){const {pts,cum}=PATHMETA[k];for(let i=1;i<pts.length;i++)if(s<=cum[i]){const t=(s-cum[i-1])/Math.max(1e-9,cum[i]-cum[i-1]);return[pts[i-1][0]+(pts[i][0]-pts[i-1][0])*t,pts[i-1][1]+(pts[i][1]-pts[i-1][1])*t];}return pts[pts.length-1];}
+function posAt(r,day){const k=r.key==='hub'?'hub':'direct';const M=PATHMETA[k],st=r.stops;
+ if(day<=st[0].d)return pointAt(k,M.nodeAt[st[0].n]);
+ for(let i=1;i<st.length;i++)if(day<=st[i].d){const a=M.nodeAt[st[i-1].n],b=M.nodeAt[st[i].n];const t=(day-st[i-1].d)/Math.max(.001,st[i].d-st[i-1].d);return pointAt(k,a+(b-a)*t);}
+ return pointAt(k,M.nodeAt[st[st.length-1].n]);}
+const VIEWS={full:[[-4,112],[44,316]],car:[[6.5,276.5],[20.5,302.5]]};
+function initMap(){
+ if(!window.L){$('map').innerHTML='<div style="padding:20px" class="mini">No se pudo cargar el mapa.</div>';return;}
+ map=L.map('map',{zoomSnap:0.25,attributionControl:true,worldCopyJump:false,scrollWheelZoom:false});
+ map.fitBounds(VIEWS.full);
+ let fellBack=false;
+ const fallback=()=>{if(fellBack||!window.LAND)return;fellBack=true;$('map').style.background='#dfeaf5';
+   L.polygon(window.LAND,{color:'#b6c2cf',weight:.8,fillColor:'#f4f1ea',fillOpacity:1,interactive:false}).addTo(map).bringToBack();};
+ const tiles=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:12,attribution:'© OpenStreetMap'});
+ tiles.on('tileerror',fallback);tiles.addTo(map);
+ setTimeout(()=>{const ok=[...document.querySelectorAll('#map img.leaflet-tile-loaded')].length;if(!ok)fallback();},2500);
+ for(const k of ['direct','hub'])routeLines[k]=L.polyline(PATHS[k].map(x=>x[1]),{color:COL[k],weight:3.5,dashArray:'8 7',opacity:.9}).addTo(map);
+ for(const [k,[la,lo,n]] of Object.entries(PORTS)){if(k==='zlc')continue;
+  const alt=k==='ctg'||k==='cau';
+  L.circleMarker([la,lo],{radius:alt?4:6,color:'#fff',weight:2,fillColor:alt?'#8a96a6':'#33414f',fillOpacity:1}).addTo(map)
+   .bindTooltip(n,{permanent:true,direction:k==='col'?'left':k==='bal'?'bottom':k==='kin'?'top':'right',className:'port'+(alt||k==='bal'?' minor':''),offset:k==='col'?[-6,0]:[6,0]});}
+ alertLayer=L.layerGroup().addTo(map);
+ const zc=()=>$('map').classList.toggle('zin',map.getZoom()>=4.5);map.on('zoomend',zc);zc();
+ for(const k of ['direct','hub']){boxes[k]=L.marker([0,0],{icon:L.divIcon({className:'',iconSize:[24,14],iconAnchor:[12,7],html:`<div class="box" style="background-color:${COL[k]}"></div>`}),zIndexOffset:1000}).addTo(map)
+   .bindTooltip('',{permanent:true,direction:k==='hub'?'bottom':'top',className:'cost',offset:k==='hub'?[0,8]:[0,-8]});}
+}
+function drawMap(R,day,p){
+ if(!map)return;
+ for(const k of ['direct','hub']){const ll=posAt(R[k],day);boxes[k].setLatLng(ll);
+  boxes[k].setTooltipContent(`<span style="color:${COL[k]}">${fmt(costAt(R[k],day,p))}</span>`);}
+ alertLayer.clearLayers();
+ const al=(ll,txt,dir)=>{L.circleMarker(ll,{radius:16,color:'#c0392b',weight:2,fillColor:'#c0392b',fillOpacity:.18}).addTo(alertLayer).bindTooltip('⚠ '+txt,{permanent:true,direction:dir||'right',className:'alert',offset:[14,0]});};
+ if(state.on.t1)al([30,175],'Alza de flete transpacífico','top');
+ if(state.on.t2)al(PORTS.kin.slice(0,2),'Congestión en transbordo','left');
+ if(state.on.t3)al([14.2,290],'Temporada alta feeder','bottom');
+ if(state.on.t4)al(PORTS.bal.slice(0,2),'Restricción del Canal','left');
+ if(state.on.t5)al(PORTS.bgi.slice(0,2),'Retención aduanal','top');
+}
+
+/* ---------- cost line chart, drawn at real pixel size ---------- */
+function drawChart(R,day,p){
+ const s=$('chart');const W=s.clientWidth,H=s.clientHeight;if(!W)return;
+ const L0=62,Rr=Math.min(190,W*.2),Tp=14,B=30;
+ const maxD=Math.max(...Object.values(R).map(r=>r.rel))+13;
+ const maxY=Math.max(...Object.values(R).map(r=>Math.max(r.sales,r.landed)))*1.05;
+ const minY=Math.max(0,Math.floor(R.direct.fobTot*0.85/5000)*5000);
+ const X=d=>L0+(W-L0-Rr)*d/maxD,Y=v=>Tp+(H-Tp-B)*(1-(v-minY)/(maxY-minY));
+ let h='';const labels=[];const step=(maxY-minY)>40000?10000:5000;
+ for(let v=minY;v<=maxY;v+=step)h+=`<line x1="${L0}" x2="${W-Rr}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e3e7ec"/><text x="${L0-8}" y="${Y(v)+4}" fill="#5f6b78" font-size="12" text-anchor="end">$${v/1000}k</text>`;
+ for(let d=0;d<=maxD;d+=10)h+=`<text x="${X(d)}" y="${H-B+19}" fill="#5f6b78" font-size="12" text-anchor="middle">día ${d}</text>`;
+ const sl=R.direct.sales,cl=R.direct.sales*(1-p.opex);
+ h+=`<line x1="${L0}" x2="${W-Rr}" y1="${Y(sl)}" y2="${Y(sl)}" stroke="#2e7d32" stroke-width="2"/><line x1="${L0}" x2="${W-Rr}" y1="${Y(cl)}" y2="${Y(cl)}" stroke="#2e7d32" stroke-width="1.5" stroke-dasharray="5 5"/>`;
+ labels.push({y:Y(sl),t:'Ingreso '+fmt(sl),c:'#2e7d32'},{y:Y(cl),t:'Ingreso − gastos op.',c:'#2e7d32'});
+ ['orig','direct','hub'].forEach(k=>{const r=R[k],c=COL[k];const end=k==='orig'?r.rel:Math.min(day,r.rel);
+  const pts=[];let prev=null;for(let d=0;d<=end+1e-9;d+=0.25){const v=costAt(r,d,p);if(prev!==null&&v-prev>50)pts.push([X(d),Y(prev)]);pts.push([X(d),Y(v)]);prev=v;}
+  const ve=costAt(r,end,p);pts.push([X(end),Y(ve)]);
+  h+=`<polyline points="${pts.map(q=>q.map(z=>z.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="${c}" stroke-width="${k==='orig'?2:3}" ${k==='orig'?'stroke-dasharray="6 5"':''}/>`;
+  h+=`<circle cx="${X(end)}" cy="${Y(ve)}" r="${k==='orig'?3.5:5}" fill="${c}"/>`;
+  if(k!=='orig')r.ev.filter(e=>e.day<=end&&e.cost>300&&e.day>0).forEach(e=>{h+=`<circle cx="${X(e.day)}" cy="${Y(costAt(r,e.day,p))}" r="3.5" fill="#fff" stroke="${c}" stroke-width="2"/>`;});
+  if(end>=r.rel-1e-6)labels.push({y:Y(r.landed),t:(k==='orig'?'PNL orig. ':k==='direct'?'Directo ':'Hub ')+fmt(r.landed),c,b:1});});
+ const bm=k=>({x:X(R[k].rel)+10,y:(Y(R[k].sales*(1-p.opex))+Y(R[k].landed))/2});
+ const close=Math.abs(bm('direct').x-bm('hub').x)<140&&Math.abs(bm('direct').y-bm('hub').y)<18;
+ ['direct','hub'].forEach(k=>{const r=R[k];if(day<r.rel)return;const x=X(r.rel)+10,y1=Y(r.sales*(1-p.opex)),y2=Y(r.landed),col=r.net>=0?'#2e7d32':'#c0392b';
+  h+=`<path d="M${x-4},${y1} H${x} V${y2} H${x-4}" fill="none" stroke="${col}" stroke-width="2"/>`;
+  const ly=(y1+y2)/2+4+(close?(k==='direct'?9:-9):0),lx=close?Math.max(bm('direct').x,bm('hub').x)+5:x+5;
+  h+=`<text x="${lx}" y="${ly}" fill="${col}" font-size="12.5" font-weight="700" paint-order="stroke" stroke="#fff" stroke-width="3">${close?(k==='hub'?'Hub ':'Directo '):''}neto ${fmt(r.net)}</text>`;});
+ labels.sort((a,b)=>a.y-b.y);for(let i=1;i<labels.length;i++)if(labels[i].y-labels[i-1].y<16)labels[i].y=labels[i-1].y+16;
+ labels.forEach(l=>h+=`<text x="${W-Rr+8}" y="${l.y+4}" fill="${l.c}" font-size="12.5" ${l.b?'font-weight="700"':''}>${l.t}</text>`);
+ if(day<maxD-13)h+=`<line x1="${X(day)}" x2="${X(day)}" y1="${Tp}" y2="${H-B}" stroke="#0C447C" stroke-opacity=".35"/>`;
+ s.innerHTML=h;
+}
+
+/* ---------- KPI cards ---------- */
+function drawKpis(R){
+ const meta={direct:['China → transbordo de la naviera → Bridgetown','var(--p-azul)'],hub:['China → Colón → ZLC → feeder → Bridgetown','var(--p-ambar)'],orig:['Directo con el flete presupuestado','var(--p-gris)']};
+ $('kpis').innerHTML=['direct','hub','orig'].map(k=>{const r=R[k];return `<div class="kpi" style="--c:${COL[k]};--bgc:${meta[k][1]}"><div class="nm">${NAME[k]}</div><div class="rt">${meta[k][0]}</div>
+  <div class="mini">Margen neto por contenedor</div><div class="big ${r.net>=0?'pos':'neg'}">${fmt(r.net)} <span style="font-size:15px">(${pct(r.net/r.sales)})</span></div>
+  <div class="row"><span>Margen bruto</span><span class="num ${r.gross>=0?'pos':'neg'}">${fmt(r.gross)} · ${pct(r.gross/r.sales)}</span></div>
+  <div class="row"><span>Costo aterrizado por unidad</span><span class="num">${fmt2(r.landed/r.units)}</span></div>
+  <div class="row"><span>Días hasta liberar</span><span class="num">${Math.round(r.rel)}</span></div>
+  <div class="row"><span>Flete total / máximo para objetivo</span><span class="num">${fmt(r.freight)} / <b class="${r.fmax>=r.freight?'pos':'neg'}">${fmt(r.fmax)}</b></span></div></div>`;}).join('');
+}
+function drawInsight(R,p){
+ const d=R.direct,h=R.hub,o=R.orig,diff=h.net-d.net,mult=(1+p.ins)*(1+d.dutyRate);
+ let s=`Con estos supuestos, la ruta <b>${diff>=0?'Hub Panamá':'Directa'}</b> deja <b>${fmt(Math.abs(diff))}</b> más de margen neto por contenedor. `;
+ s+=`Cada US$1 de flete cuesta <b>US$${mult.toFixed(2)}</b> en el P&amp;L porque Barbados cobra arancel y levy sobre el CIF. `;
+ s+=`El flete pasó de ${fmt(o.freight)} (PNL original) a ${fmt(d.freight)} en la ruta directa, y el margen neto cayó ${fmt(o.net-d.net)}. `;
+ const g=h.fmax-h.freight;
+ s+=g>=0?`En el hub sobran <b>${fmt(g)}</b> de flete antes de bajar del margen objetivo de ${pct(p.target)}.`:`Para llegar al margen objetivo de ${pct(p.target)}, el flete total del hub debe bajar <b>${fmt(-g)}</b>, a ${fmt(h.fmax)}.`;
+ $('insight').innerHTML=s;
+}
+
+/* ---------- P&L view ---------- */
+let per='cont',wfR='hub';
+function factor(r){return per==='unit'?1/r.units:per==='year'?(+$('perYear').value||1):1;}
+function pnlRows(r){const f=factor(r);return [
+ ['Ventas',r.sales*f,'sub'],
+ ['Mercancía FOB',-r.fobTot*f],
+ ...r.fr.map(([l,c])=>[l,-c*f]),
+ ['Seguro de carga',-r.insurance*f],
+ ['Valor CIF (base de impuestos)',-r.cif*f,'sub'],
+ ['Arancel + levy ambiental',-r.duties*f],
+ ['Cargos destino + agente',-(r.dest+r.fee)*f],
+ ['Demoras en puerto',-r.dem*f],
+ ['Costo financiero en tránsito',-r.carry*f],
+ ['Costo aterrizado total',-r.landed*f,'sub'],
+ ['Margen bruto',r.gross*f,'tot'],
+ ['Gastos operativos',-r.opex*f],
+ ['Margen neto',r.net*f,'tot']];}
+let lastCsv='';
+function drawPnl(R){
+ const ks=['direct','hub','orig'];const rows={};ks.forEach(k=>rows[k]=pnlRows(R[k]));
+ // union of labels keeping order
+ const labels=[];ks.forEach(k=>rows[k].forEach(r=>{if(!labels.find(l=>l[0]===r[0]))labels.push([r[0],r[2]]);}));
+ const order=['Ventas','Mercancía FOB','Flete naviera China → Bridgetown','Flete tramo 1 China → Colón','Manejo ZLC (traslado, almacén, DMC)','Feeder Colón → Bridgetown','Seguro de carga','Valor CIF (base de impuestos)','Arancel + levy ambiental','Cargos destino + agente','Demoras en puerto','Costo financiero en tránsito','Costo aterrizado total','Margen bruto','Gastos operativos','Margen neto'];
+ labels.sort((a,b)=>order.indexOf(a[0])-order.indexOf(b[0]));
+ const val=(k,l)=>{const r=rows[k].find(x=>x[0]===l);return r?r[1]:0;};
+ const money=per==='unit'?fmt2:fmt;
+ const unitLbl=per==='unit'?'US$ por unidad':per==='year'?'US$ por año':'US$ por contenedor';
+ let h=`<thead><tr><th>${unitLbl}</th>${ks.map(k=>`<th style="color:${COL[k]}">${NAME[k]}</th><th>% venta</th>`).join('')}<th>Hub − Directo</th></tr></thead><tbody>`;
+ let csv=[[unitLbl,...ks.flatMap(k=>[NAME[k],'% venta']),'Hub - Directo']];
+ labels.forEach(([l,cls])=>{const cells=ks.map(k=>{const v=val(k,l),s=val(k,'Ventas');return [v,s?v/s:0];});const dlt=val('hub',l)-val('direct',l);
+  h+=`<tr class="${cls||''}"><td>${l}</td>${cells.map(([v,q])=>`<td class="num ${cls==='tot'?(v>=0?'pos':'neg'):''}">${money(v)}</td><td class="pct num">${pct(q)}</td>`).join('')}<td class="num ${dlt>0?'pos':dlt<0?'neg':''}">${money(dlt)}</td></tr>`;
+  csv.push([l,...cells.flatMap(([v,q])=>[v.toFixed(2),(q*100).toFixed(1)+'%']),dlt.toFixed(2)]);});
+ h+='</tbody>';$('pnl').innerHTML=h;lastCsv=csv.map(r=>r.join('\t')).join('\n');
+ drawWf(R);
+}
+function drawWf(R){
+ const s=$('wf');const W=s.clientWidth,H=s.clientHeight;if(!W)return;const r=R[wfR];const f=factor(r);
+ const steps=[['Ventas',r.sales,'t'],['FOB',-r.fobTot],['Fletes y hub',-r.freight],['Seguro',-r.insurance],['Arancel + levy',-r.duties],['Destino + agente',-(r.dest+r.fee)],['Demoras',-r.dem],['Costo financiero',-r.carry],['Margen bruto',r.gross,'t'],['Gastos op.',-r.opex],['Margen neto',r.net,'t']].map(([a,b,c])=>[a,b*f,c]);
+ const money=per==='unit'?fmt2:fmt;
+ let run=0;const bars=steps.map(([l,v,t])=>{let y0,y1;if(t){y0=0;y1=v;run=v;}else{y0=run;y1=run+v;run=y1;}return{l,v,t,y0,y1};});
+ const lo=Math.min(0,...bars.map(b=>Math.min(b.y0,b.y1))),hi=Math.max(...bars.map(b=>Math.max(b.y0,b.y1)))*1.08;
+ const L0=70,B=46,Tp=16,bw=(W-L0-10)/bars.length;const Y=v=>Tp+(H-Tp-B)*(1-(v-lo)/(hi-lo));
+ let h='';const st=(hi-lo)>200000?50000:(hi-lo)>40000?10000:(hi-lo)>4000?1000:(hi-lo)>400?100:1;
+ for(let v=Math.ceil(lo/st)*st;v<=hi;v+=st)h+=`<line x1="${L0}" x2="${W-10}" y1="${Y(v)}" y2="${Y(v)}" stroke="${v===0?'#9aa4af':'#e3e7ec'}"/><text x="${L0-8}" y="${Y(v)+4}" fill="#5f6b78" font-size="12" text-anchor="end">${money(v)}</text>`;
+ bars.forEach((b,i)=>{const x=L0+i*bw+bw*.14,w=bw*.72;const top=Y(Math.max(b.y0,b.y1)),hh=Math.max(1,Math.abs(Y(b.y0)-Y(b.y1)));
+  const fill=b.t?(b.v>=0?(b.l==='Ventas'?'#d7e5f4':'#d6efdc'):'#f6d5d1'):'#fbe8c8';const st2=b.t?(b.v>=0?(b.l==='Ventas'?'#1E5A9E':'#2e7d32'):'#c0392b'):'#C77700';
+  h+=`<rect x="${x}" y="${top}" width="${w}" height="${hh}" fill="${fill}" stroke="${st2}" stroke-width="1.5"/>`;
+  if(i<bars.length-1&&!bars[i+1].t)h+=`<line x1="${x+w}" x2="${x+bw}" y1="${Y(b.t?b.y1:b.y1)}" y2="${Y(b.t?b.y1:b.y1)}" stroke="#9aa4af" stroke-dasharray="3 3"/>`;
+  h+=`<text x="${x+w/2}" y="${top-6}" fill="${b.t?st2:'#33414f'}" font-size="12" font-weight="${b.t?700:400}" text-anchor="middle">${money(b.v)}</text>`;
+  h+=`<text x="${x+w/2}" y="${H-B+18}" fill="#33414f" font-size="12" text-anchor="middle">${b.l}</text>`;});
+ s.innerHTML=h;
+}
+$('per').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;per=b.dataset.u;[...$('per').children].forEach(x=>x.classList.toggle('on',x===b));$('yrBox').style.display=per==='year'?'':'none';drawPnl(R);});
+$('perYear').addEventListener('input',()=>drawPnl(R));
+$('wfRoute').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;wfR=b.dataset.r;[...$('wfRoute').children].forEach(x=>x.classList.toggle('on',x===b));drawWf(R);});
+$('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(lastCsv);$('copied').textContent='Copiada: pégala en Excel';}catch(e){$('copied').textContent='Tu navegador no permitió copiar';}});
+
+/* ---------- run, play, presets, tabs ---------- */
+let R=null,p=null,curDay=80,playing=false,view='viaje';
+function maxDay(){return Math.ceil(Math.max(R.direct.rel,R.hub.rel))+2;}
+function run(){p=P();R={direct:simulate('direct',p),hub:simulate('hub',p),orig:simulate('orig',p)};
+ $('scrub').max=maxDay();if(!playing){curDay=maxDay();$('scrub').value=curDay;}
+ render();drawKpis(R);drawInsight(R,p);drawPnl(R);}
+function render(){$('dayLbl').textContent='Día '+Math.floor(curDay);drawMap(R,curDay,p);drawChart(R,curDay,p);}
+$('scrub').addEventListener('input',e=>{playing=false;$('play').textContent='▶ Reproducir viaje';curDay=+e.target.value;render();});
+$('play').addEventListener('click',()=>{if(playing){playing=false;$('play').textContent='▶ Reproducir viaje';return;}
+ playing=true;$('play').textContent='❚❚ Pausa';curDay=0;let last=performance.now();const m=maxDay();
+ const tick=now=>{if(!playing)return;curDay+=(now-last)/1000*7;last=now;if(curDay>=m){curDay=m;playing=false;$('play').textContent='▶ Reproducir viaje';}
+  $('scrub').value=curDay;render();if(playing)requestAnimationFrame(tick);};requestAnimationFrame(tick);});
+document.querySelectorAll('aside .f input').forEach(i=>i.addEventListener('input',()=>{clearPreset();run();}));
+function clearPreset(){[...$('presets').children].forEach(b=>b.classList.remove('on'));}
+function preset(name){
+ [...TRIGGERS,...LEVERS].forEach(t=>{setOn(t.id,false,true);setVal(t.id,t.val);});
+ ({peak:['t2','t3'],aduana:['t5','t6'],cons:['l1','l2']}[name]||[]).forEach(id=>setOn(id,true,true));
+ [...$('presets').children].forEach(b=>b.classList.toggle('on',b.dataset.p===name));run();}
+$('presets').addEventListener('click',e=>{const b=e.target.closest('button');if(b)preset(b.dataset.p);});
+function showView(v){view=v;[...$('tabs').children].forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+ ['viaje','pnl','sup'].forEach(x=>$('v-'+x).classList.toggle('on',x===v));
+ if(v==='viaje'&&map)setTimeout(()=>{map.invalidateSize();render();},30);if(v==='pnl')drawWf(R);}
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)showView(b.dataset.v);});
+$('mapView').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!map)return;[...$('mapView').children].forEach(x=>x.classList.toggle('on',x===b));map.flyToBounds(VIEWS[b.dataset.m],{duration:.8});});
+const ro=new ResizeObserver(()=>{if(R){drawChart(R,curDay,p);if(view==='pnl')drawWf(R);}});ro.observe($('chart'));ro.observe($('wf'));
+
+/* ---------- guided tour ---------- */
+const TOUR=[
+ {sel:'#presets',t:'Escenarios listos',x:'Empiece aquí. Cada botón carga una situación: el flete de hoy, temporada alta con congestión, un problema en aduana o el hub consolidado.'},
+ {sel:'#negocio',t:'Producto y negocio',x:'Unidades, costo FOB, precio de venta, arancel y gastos operativos. Ponga los datos reales del producto; todo el modelo se recalcula al momento.'},
+ {sel:'#triggers',t:'Triggers de la cadena',x:'Eventos que pasan en la vida real. Al activar uno, la tarjeta se pinta en rojo, aparece una alerta en el mapa y se mueve la línea de costos. La barra ajusta la intensidad.'},
+ {sel:'#levers',t:'Palancas',x:'Lo que la empresa puede hacer: consolidar varios contenedores por embarque en la Zona Libre y negociar tarifa por volumen.'},
+ {sel:'#kpis',t:'Resultado por ruta',x:'Margen neto, margen bruto, costo por unidad, días y el flete máximo que todavía cumple el margen objetivo. Azul es la ruta directa, ámbar el hub Panamá, gris el PNL original.'},
+ {sel:'#cardMap',t:'El viaje en el mapa',x:'Pulse Reproducir viaje: los contenedores salen de Shanghái y cada uno lleva su costo acumulado. Con Panamá – Caribe se acerca a Colón, Kingston y Bridgetown.',prep:()=>showView('viaje')},
+ {sel:'#cardChart',t:'Línea de costos',x:'Cada escalón es un costo que entra: flete, manejo en Zona Libre, feeder y, al llegar, aranceles. La distancia hasta la línea punteada verde es el margen neto.'},
+ {sel:'#cardInsight',t:'Lectura',x:'Un resumen en palabras de lo que dicen los números del escenario activo.'},
+ {sel:'#cardPnl',t:'Estado de resultados',x:'Los financieros completos de las tres rutas, con % sobre venta y la diferencia Hub − Directo. Puede verlo por contenedor, por unidad o por año, y copiar la tabla a Excel.',prep:()=>showView('pnl')},
+ {sel:'#cardWf',t:'Del ingreso al margen neto',x:'La cascada muestra dónde se va el dinero de cada ruta, partida por partida.'},
+ {sel:'#base',t:'Costos base por ruta',x:'Aquí se reemplazan los supuestos por las cotizaciones reales: feeder, manejo en ZLC, cargos de destino. Es el siguiente paso para cerrar el análisis.',prep:()=>{showView('viaje');$('base').open=true;}},
+];
+let ti=0;
+function startTour(){ti=0;$('tour').classList.add('open');stepTour();}
+function endTour(){$('tour').classList.remove('open');try{localStorage.setItem('pnlTourSeen','1');}catch(e){}}
+async function stepTour(){const s=TOUR[ti];if(s.prep)s.prep();const el=document.querySelector(s.sel);if(!el)return endTour();
+ el.scrollIntoView({block:'center',behavior:'instant'});
+ setTimeout(()=>{const r=el.getBoundingClientRect(),hl=$('tourHl'),bx=$('tourBox');
+  hl.style.left=(r.left-4)+'px';hl.style.top=(r.top-4)+'px';hl.style.width=(r.width+8)+'px';hl.style.height=(r.height+8)+'px';
+  $('tourT').textContent=s.t;$('tourX').textContent=s.x;$('tourN').textContent=(ti+1)+' de '+TOUR.length;
+  $('tourPrev').disabled=ti===0;$('tourNext').textContent=ti===TOUR.length-1?'Terminar':'Siguiente';
+  const bw=360,vw=innerWidth,vh=innerHeight;let x=r.right+16,y=r.top;
+  if(x+bw>vw-10){x=Math.max(10,Math.min(vw-bw-10,r.left));y=r.bottom+14;}
+  if(y+190>vh)y=Math.max(10,r.top-200);if(y<10)y=10;
+  bx.style.left=x+'px';bx.style.top=y+'px';},120);}
+$('btnTour').addEventListener('click',startTour);$('tourSkip').addEventListener('click',endTour);
+$('tourNext').addEventListener('click',()=>{if(ti<TOUR.length-1){ti++;stepTour();}else endTour();});
+$('tourPrev').addEventListener('click',()=>{if(ti>0){ti--;stepTour();}});
+addEventListener('keydown',e=>{if(!$('tour').classList.contains('open'))return;if(e.key==='Escape')endTour();if(e.key==='ArrowRight')$('tourNext').click();if(e.key==='ArrowLeft')$('tourPrev').click();});
+
+initMap();
+const q=new URLSearchParams(location.hash.slice(1));
+preset(q.get('preset')||'hoy');
+let seen=false;try{seen=!!localStorage.getItem('pnlTourSeen');}catch(e){}
+if(!seen&&!q.get('notour'))setTimeout(startTour,900);
+window.__sim={preset,setOn,setVal,run,showView,startTour,endTour,get R(){return R},get map(){return map},
+ setDay:d=>{curDay=d;$('scrub').value=d;render();},tourStep:i=>{ti=i;$('tour').classList.add('open');stepTour();},mapView:m=>{[...$('mapView').children].forEach(x=>x.classList.toggle('on',x.dataset.m===m));map.fitBounds(VIEWS[m]);}};
+}
+</script>
+</body>
+</html>
