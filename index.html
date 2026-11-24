@@ -42,6 +42,25 @@ h2{font-size:13.5px;color:var(--azul);margin:14px 0 8px;font-weight:700}h2:first
 .grp{border:1px solid var(--borde);border-left:4px solid var(--c);background:var(--b);padding:6px 10px 4px;margin:8px 0}
 .gh{font-weight:700;color:var(--c);font-size:13px;margin-bottom:2px}
 .grp .f input{background:#fff}
+.hbtn2{font:inherit;font-size:13px;background:#fff;color:var(--azul);font-weight:600;border:1px solid var(--borde);padding:6px 11px;cursor:pointer;display:inline-block}
+.hbtn2:hover{border-color:var(--azul)}
+table.edit td{padding:3px 4px;border-bottom:1px solid #e6e9ed}table.edit th{white-space:normal;font-size:12px;vertical-align:bottom;text-align:left}
+table.edit input,table.edit select{font:inherit;font-size:13px;border:1px solid #cfd5dc;padding:4px 5px;width:100%;background:#fff}
+table.edit input[type=number]{text-align:right}table.edit input::placeholder{color:#b07a1d;opacity:1}
+table.edit input.amb{background:var(--p-ambar);border-color:#e4c48a}table.edit input:disabled{background:#f1f3f5;border-color:#e3e7ec}
+table.edit tr.ej td:first-child input{font-style:italic}
+.xbtn{border:0;background:none;color:var(--gris);font-size:16px;cursor:pointer;padding:2px 6px}.xbtn:hover{color:var(--rojo)}
+#rankTbl th{cursor:pointer;user-select:none}#rankTbl th.sorted{color:var(--azul)}
+#rankTbl th.l,#rankTbl td.l{text-align:left}#rankTbl th{white-space:normal;vertical-align:bottom}#rankTbl td{vertical-align:middle}
+td.best{background:var(--p-verde)!important;font-weight:700}
+.chip{display:inline-block;padding:1px 7px;font-size:11.5px;border:1px solid var(--borde);background:#fff;margin:1px 2px 1px 0}
+.chip.d{border-color:#9db8d8;background:var(--p-azul);color:var(--c-dir)}.chip.h{border-color:#e4c48a;background:var(--p-ambar);color:#8a5200}.chip.a{background:var(--p-ambar);border-color:#e4c48a;color:#7a4b00}
+.two2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:14px}
+.bars .br{display:grid;grid-template-columns:170px 1fr;gap:10px;align-items:center;margin:7px 0;font-size:13px}
+.bars .trk{position:relative;height:24px;background:#f3f5f7;border:1px solid #e3e7ec}
+.bars .bar{position:absolute;top:2px;bottom:2px}.bars .zero{position:absolute;top:-3px;bottom:-3px;width:1px;background:#5f6b78}
+.bars .v{position:absolute;top:3px;font-size:12px;font-weight:700;white-space:nowrap}
+@media(max-width:1100px){.two2{grid-template-columns:1fr}}
 video{width:100%;max-height:72vh;background:#000;display:block}
 details{margin-top:12px;border-top:1px solid var(--borde);padding-top:8px}summary{cursor:pointer;color:var(--azul);font-weight:600;font-size:13.5px}
 main{display:flex;flex-direction:column;gap:14px}
@@ -94,7 +113,7 @@ td.pct{color:var(--gris);font-size:12.5px}
   <div class="seg" id="presets">
     <button data-p="hoy" class="on">Hoy (flete duplicado)</button><button data-p="peak">Temporada alta + congestión</button><button data-p="aduana">Problema en aduana</button><button data-p="cons">Hub consolidado</button>
   </div>
-  <div class="tabs" id="tabs"><button data-v="viaje" class="on">Viaje y costos</button><button data-v="pnl">Estado de resultados (P&amp;L)</button><button data-v="video">Video explicativo</button><button data-v="sup">Supuestos y fuentes</button></div>
+  <div class="tabs" id="tabs"><button data-v="viaje" class="on">Viaje y costos</button><button data-v="pnl">Estado de resultados (P&amp;L)</button><button data-v="ofertas">Comparar ofertas</button><button data-v="video">Video explicativo</button><button data-v="sup">Supuestos y fuentes</button></div>
 </div>
 <div class="wrap">
 <aside id="panel">
@@ -164,6 +183,23 @@ td.pct{color:var(--gris);font-size:12.5px}
   </div>
  </section>
 
+ <section class="view" id="v-ofertas">
+  <div class="card" id="cardOfIn">
+   <div class="cardh"><h3>Ofertas de los agentes</h3><span class="mini">Escenario aplicado: <b id="ofScen"></b></span>
+    <div class="sp"><span class="mini" id="ofMsg"></span><button class="hbtn2" id="ofAdd">+ Agregar oferta</button><button class="hbtn2" id="ofTpl">Descargar plantilla</button><label class="hbtn2" for="ofFile" id="ofUp">Subir plantilla llena</label><input type="file" id="ofFile" accept=".xlsx" hidden><button class="hbtn2" id="ofClear">Vaciar</button></div></div>
+   <div class="mini" style="margin:-2px 0 8px">US$ por contenedor 40HQ. Una celda vacía se completa con el supuesto de la columna izquierda (se ve en ámbar), así todas las ofertas se comparan con los mismos rubros. Las ofertas se guardan en este navegador.</div>
+   <div class="scroll"><table class="edit" id="ofTbl"></table></div>
+  </div>
+  <div class="card" id="cardRank">
+   <div class="cardh"><h3>Ranking de ofertas</h3><span class="mini">Mismo producto, mismos impuestos y el escenario activo · clic en un encabezado para ordenar · verde = mejor de la columna</span></div>
+   <div class="scroll"><table id="rankTbl"></table></div>
+   <div class="mini" id="rankNote" style="margin-top:6px"></div>
+  </div>
+  <div class="two2">
+   <div class="card" id="cardBars"><div class="cardh"><h3>Margen neto por oferta</h3><span class="mini">por contenedor</span></div><div class="bars" id="ofBars"></div></div>
+   <div class="card" id="cardScatter"><div class="cardh"><h3>Costo por unidad vs. días hasta liberar</h3><span class="mini">abajo a la izquierda = más barata y más rápida</span></div><div class="fig" style="height:330px"><svg id="ofSc"></svg></div></div>
+  </div>
+ </section>
  <section class="view" id="v-video">
   <div class="card"><div class="cardh"><h3>Video explicativo</h3><span class="mini">2 min 34 s · cómo leer el simulador y qué muestra cada escenario</span></div>
    <video id="vid" controls preload="metadata" poster="docs/poster.jpg" src="docs/Simulador_PNL_rutas_China_Barbados.mp4"></video></div>
@@ -432,12 +468,126 @@ $('per').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
 $('perYear').addEventListener('input',()=>drawPnl(R));
 $('wfRoute').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;wfR=b.dataset.r;[...$('wfRoute').children].forEach(x=>x.classList.toggle('on',x===b));drawWf(R);});
 
+/* ---------- offers comparison ---------- */
+const OF_FIELDS=[
+ ['agente','Agente','text',150],['ruta','Ruta','ruta',92],['transb','Transbordo / hub','text',118],
+ ['flete','Flete principal','num',92],['recargos','Recargos (BAF, PSS…)','num',88],['feeder','Feeder Colón → BGI','num',88],
+ ['zlc','Manejo ZLC','num',82],['destino','Cargos destino','num',82],['honor','Honorario agente','num',80],
+ ['transito','Tránsito (días)','num',66],['libres','Días libres','num',62],['freq','Salidas por semana','num',66],
+ ['bl','Un solo B/L','bl',74],['validez','Validez','text',96]];
+const OF_EX=[
+ {agente:'Agente A',ruta:'direct',transb:'Kingston',flete:9300,recargos:0,feeder:null,zlc:null,destino:null,honor:150,transito:52,libres:10,freq:1,bl:'si',validez:'30-nov-2026',ej:1},
+ {agente:'Agente B',ruta:'direct',transb:'Cartagena',flete:8700,recargos:450,feeder:null,zlc:null,destino:null,honor:120,transito:56,libres:7,freq:1,bl:'si',validez:'15-dic-2026',ej:1},
+ {agente:'Agente C',ruta:'hub',transb:'Colón · ZLC',flete:5000,recargos:0,feeder:2200,zlc:900,destino:600,honor:350,transito:45,libres:10,freq:2,bl:'si',validez:'31-dic-2026',ej:1},
+ {agente:'Agente D',ruta:'hub',transb:'Colón · ZLC',flete:4800,recargos:250,feeder:null,zlc:700,destino:650,honor:300,transito:47,libres:14,freq:1,bl:'no',validez:'10-dic-2026',ej:1}];
+let OFFERS=null,ofSort={k:'net',dir:-1};
+try{OFFERS=JSON.parse(localStorage.getItem('pnlOfertas')||'null');}catch(e){}
+if(!Array.isArray(OFFERS))OFFERS=OF_EX.map(o=>({...o}));
+const saveOffers=()=>{try{localStorage.setItem('pnlOfertas',JSON.stringify(OFFERS));}catch(e){}};
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function ofDefaults(o,p){const hub=o.ruta==='hub';const N=state.on.l1?state.val.l1:1;
+ return {flete:hub?p.fLeg1:p.fDirect,recargos:0,feeder:hub?p.fFeeder:null,zlc:hub?p.zlcVar+p.zlcFix/N:null,destino:p.dest,honor:hub?150+p.feeHfix/N:p.feeD,transito:hub?45:52,libres:p.free};}
+function simOffer(o,p,trig){
+ const Tt=id=>trig&&state.on[id]?state.val[id]:0,On=id=>trig&&state.on[id];
+ const hub=o.ruta==='hub',d=ofDefaults(o,p),use=(k)=>(o[k]===null||o[k]===undefined||o[k]==='')?d[k]:+o[k];
+ const assumed=['flete','destino','honor','transito','libres'].concat(hub?['feeder','zlc']:[]).filter(k=>o[k]===null||o[k]===undefined||o[k]==='');
+ const fob=p.units*p.fob,fl=use('flete'),rec=+(o.recargos||0),t1=Tt('t1')/100,t3=Tt('t3')/100,canal=Tt('t4');
+ const principal=hub?fl*(1+t1)+canal:fl*(1+t1)+(On('t3')?Math.round(fl*0.35*t3):0)+canal;
+ const feeder=hub?use('feeder')*(1+t3):0,zlc=hub?use('zlc'):0,freight=principal+rec+feeder+zlc;
+ const ins=p.ins*(fob+freight),cif=fob+freight+ins,dutyRate=p.duty+Tt('t6')/100+p.levy,duties=cif*dutyRate;
+ const dest=use('destino'),fee=use('honor');
+ const arr=use('transito')+(On('t4')?4:0)+(hub?Math.round(Tt('t2')*0.3)+(On('t3')?3:0):Tt('t2'));
+ const hold=On('t5')?Tt('t5'):0,dem=Math.max(0,hold-use('libres'))*p.dmr,rel=arr+hold,carry=fob*p.cap*rel/365;
+ const merma=On('t7')?Tt('t7')/100*(hub?1:0.3):0,units=p.units*(1-merma),sales=units*p.price;
+ const landed=cif+duties+dest+fee+dem+carry,gross=sales-landed,net=gross-sales*p.opex;
+ const fmax=(sales*(1-p.opex-p.target)-dest-fee-dem-carry)/((1+p.ins)*(1+dutyRate))-fob;
+ return {o,hub,freight,cif,duties,dest,fee,dem,carry,rel,sales,landed,gross,net,pctNet:net/sales,unit:landed/units,fmax,slack:fmax-freight,assumed};
+}
+function ofCell(o,i,[k,l,t,w],d){
+ const v=o[k]??'';
+ if(t==='ruta')return `<select data-i="${i}" data-k="${k}" aria-label="${l}"><option value="direct"${o.ruta==='direct'?' selected':''}>Directo</option><option value="hub"${o.ruta==='hub'?' selected':''}>Hub ZLC</option></select>`;
+ if(t==='bl')return `<select data-i="${i}" data-k="${k}" aria-label="${l}"><option value="si"${o.bl!=='no'?' selected':''}>Sí</option><option value="no"${o.bl==='no'?' selected':''}>No</option></select>`;
+ if(t==='text')return `<input type="text" data-i="${i}" data-k="${k}" value="${esc(v)}" aria-label="${l}">`;
+ const hubOnly=(k==='feeder'||k==='zlc')&&o.ruta!=='hub';
+ const def=d[k];const empty=v===''||v===null;
+ const ph=hubOnly?'—':(def!=null&&k!=='freq'&&k!=='recargos'?Math.round(def*100)/100:'');
+ return `<input type="number" data-i="${i}" data-k="${k}" value="${hubOnly?'':esc(v)}" placeholder="${ph}" ${hubOnly?'disabled':''} class="${empty&&!hubOnly&&def!=null&&k!=='freq'&&k!=='recargos'?'amb':''}" aria-label="${l}">`;
+}
+function drawOfferInputs(){
+ const p=P();
+ let h=`<thead><tr>${OF_FIELDS.map(([k,l,t,w])=>`<th style="min-width:${w}px">${l}</th>`).join('')}<th></th></tr></thead><tbody>`;
+ OFFERS.forEach((o,i)=>{const d=ofDefaults(o,p);h+=`<tr class="${o.ej?'ej':''}">${OF_FIELDS.map(f=>`<td>${ofCell(o,i,f,d)}</td>`).join('')}<td><button class="xbtn" data-del="${i}" title="Quitar oferta" aria-label="Quitar oferta">✕</button></td></tr>`;});
+ if(!OFFERS.length)h+=`<tr><td colspan="${OF_FIELDS.length+1}" class="mini" style="padding:14px">No hay ofertas. Agregue una o suba la plantilla de Excel llena.</td></tr>`;
+ $('ofTbl').innerHTML=h+'</tbody>';
+}
+$('ofTbl').addEventListener('change',e=>{const t=e.target;if(!t.dataset.k)return;const o=OFFERS[+t.dataset.i];const k=t.dataset.k;
+ o[k]=t.type==='number'?(t.value===''?null:+t.value):t.value;o.ej=0;saveOffers();if(k==='ruta')drawOfferInputs();else if(t.type==='number')t.classList.toggle('amb',t.value===''&&!!t.placeholder&&k!=='freq'&&k!=='recargos');drawOfferResults();});
+$('ofTbl').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;OFFERS.splice(+b.dataset.del,1);saveOffers();drawOffers();});
+$('ofAdd').addEventListener('click',()=>{OFFERS.push({agente:'Agente '+String.fromCharCode(65+OFFERS.length%26),ruta:'hub',transb:'',flete:null,recargos:null,feeder:null,zlc:null,destino:null,honor:null,transito:null,libres:null,freq:null,bl:'si',validez:''});saveOffers();drawOffers();});
+$('ofClear').addEventListener('click',()=>{if(!OFFERS.length)return;const b=$('ofClear');if(b.dataset.ok!=='1'){b.dataset.ok='1';b.textContent='¿Seguro? Clic otra vez';setTimeout(()=>{b.dataset.ok='';b.textContent='Vaciar';},3000);return;}
+ b.dataset.ok='';b.textContent='Vaciar';OFFERS=[];saveOffers();drawOffers();});
+const RCOLS=[['rank','#'],['agente','Agente'],['ruta','Ruta'],['unit','Costo por unidad',1],['net','Margen neto',-1],['rel','Días hasta liberar',1],['freight','Flete total',1],['slack','Holgura vs. flete máx.',-1],['hit','Golpe del escenario',-1],['freq','Salidas por sem.',-1],['bl','Un solo B/L'],['assumed','Rubros supuestos']];
+function drawOfferResults(){
+ const p=P();const anyTrig=TRIGGERS.some(t=>state.on[t.id]);
+ $('ofScen').textContent=(curPreset?[...$('presets').children].find(b=>b.dataset.p===curPreset).textContent:'Personalizado')+(anyTrig?' (con triggers activos)':' (sin triggers)');
+ let rows=OFFERS.map(o=>{const r=simOffer(o,p,true);r.hit=r.net-simOffer(o,p,false).net;r.freq=+o.freq||0;return r;});
+ [...rows].sort((a,b)=>b.net-a.net).forEach((r,i)=>r.rank=i+1);
+ const k=ofSort.k;rows.sort((a,b)=>{const va=k==='agente'?a.o.agente:k==='ruta'?a.o.ruta:k==='bl'?a.o.bl:k==='assumed'?a.assumed.length:a[k];const vb=k==='agente'?b.o.agente:k==='ruta'?b.o.ruta:k==='bl'?b.o.bl:k==='assumed'?b.assumed.length:b[k];return (va>vb?1:va<vb?-1:0)*(ofSort.dir);});
+ const cols=RCOLS.filter(c=>c[0]!=='hit'||anyTrig);
+ const best={};cols.forEach(([c,,dir])=>{if(!dir||!rows.length)return;const vals=rows.map(r=>r[c]);best[c]=dir===1?Math.min(...vals):Math.max(...vals);});
+ const LBL={flete:'flete',destino:'destino',honor:'honorario',transito:'tránsito',libres:'días libres',feeder:'feeder',zlc:'manejo ZLC'};
+ const cell=(r,c)=>{const v=r[c];switch(c){
+  case 'rank':return `<td class="num">${r.rank}</td>`;
+  case 'agente':return `<td class="l"><b>${esc(r.o.agente)}</b>${r.o.transb?`<div class="mini">${esc(r.o.transb)}${r.o.validez?' · vence '+esc(r.o.validez):''}</div>`:''}</td>`;
+  case 'ruta':return `<td class="l"><span class="chip ${r.hub?'h':'d'}">${r.hub?'Hub Panamá':'Directo'}</span></td>`;
+  case 'unit':return `<td class="num${best[c]===v&&rows.length>1?' best':''}">${fmt2(v)}</td>`;
+  case 'pctNet':return `<td class="num ${v>=0?'pos':'neg'}${best[c]===v&&rows.length>1?' best':''}">${pct(v)}</td>`;
+  case 'rel':return `<td class="num${best[c]===v&&rows.length>1?' best':''}">${Math.round(v)}</td>`;
+  case 'freq':return `<td class="num${best[c]===v&&rows.length>1?' best':''}">${v||'—'}</td>`;
+  case 'bl':return `<td class="l">${r.o.bl==='no'?'<span class="chip">No</span>':'<span class="chip d" style="background:var(--p-verde);border-color:#9fcfab;color:var(--verde)">Sí</span>'}</td>`;
+  case 'assumed':return `<td class="l">${r.assumed.length?r.assumed.map(a=>`<span class="chip a">${LBL[a]}</span>`).join(''):'<span class="mini">todo cotizado</span>'}</td>`;
+  case 'hit':return `<td class="num ${v<0?'neg':''}${best[c]===v&&rows.length>1?' best':''}">${fmt(v)}</td>`;
+  case 'net':return `<td class="num ${v>=0?'pos':'neg'}${best[c]===v&&rows.length>1?' best':''}">${fmt(v)}<div class="mini">${pct(r.pctNet)} de la venta</div></td>`;
+  default:return `<td class="num ${c==='slack'?(v>=0?'pos':'neg'):''}${best[c]===v&&rows.length>1?' best':''}">${fmt(v)}</td>`;}};
+ $('rankTbl').innerHTML=`<thead><tr>${cols.map(([c,l])=>`<th data-s="${c}" class="${ofSort.k===c?'sorted':''}${['agente','ruta','bl','assumed'].includes(c)?' l':''}">${l}${ofSort.k===c?(ofSort.dir===1?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(([c])=>cell(r,c)).join('')}</tr>`).join('')||`<tr><td colspan="${cols.length}" class="mini">Sin ofertas</td></tr>`}</tbody>`;
+ const top=[...rows].sort((a,b)=>b.net-a.net)[0];
+ $('rankNote').innerHTML=rows.length?`Mejor margen neto: <b>${esc(top.o.agente)}</b> (${fmt(top.net)} por contenedor, ${Math.round(top.rel)} días).`+(rows.some(r=>r.assumed.length)?' Las ofertas con rubros supuestos (ámbar) deben confirmarse con el agente antes de decidir.':'')+(OFFERS.some(o=>o.ej)?' Los agentes A a D son ejemplos: reemplácelos con las cotizaciones reales.':''):'';
+ drawOfferCharts(rows);
+}
+$('rankTbl').addEventListener('click',e=>{const th=e.target.closest('th');if(!th)return;const k=th.dataset.s;const def=(RCOLS.find(c=>c[0]===k)||[])[2]||1;ofSort=ofSort.k===k?{k,dir:-ofSort.dir}:{k,dir:k==='rank'?1:def};drawOfferResults();});
+function drawOfferCharts(rows){
+ const rs=[...rows].sort((a,b)=>b.net-a.net);const mx=Math.max(1,...rs.map(r=>Math.abs(r.net)));const hasNeg=rs.some(r=>r.net<0),hasPos=rs.some(r=>r.net>=0);
+ const z=hasNeg&&hasPos?50:hasNeg?100:0;
+ $('ofBars').innerHTML=rs.map(r=>{const w=Math.abs(r.net)/mx*(hasNeg&&hasPos?48:96);const c=r.hub?'var(--c-hub)':'var(--c-dir)';const bg=r.net>=0?'var(--p-verde)':'var(--p-rojo)';const bc=r.net>=0?'var(--verde)':'var(--rojo)';
+  const left=r.net>=0?z:z-w;const vx=r.net>=0?`left:calc(${left+w}% + 6px)`:`right:calc(${100-left+0}% + 6px)`;
+  return `<div class="br"><div><b style="color:${c}">${esc(r.o.agente)}</b><div class="mini">${r.hub?'Hub Panamá':'Directo'}</div></div><div class="trk"><div class="zero" style="left:${z}%"></div><div class="bar" style="left:${left}%;width:${w}%;background:${bg};border:1.5px solid ${bc}"></div><span class="v ${r.net>=0?'pos':'neg'}" style="${vx}">${fmt(r.net)}</span></div></div>`;}).join('')||'<div class="mini">Sin ofertas</div>';
+ const s=$('ofSc');const W=s.clientWidth,H=s.clientHeight;if(!W)return;if(!rows.length){s.innerHTML='';return;}
+ const L0=62,Rr=20,Tp=16,B=40;const xs=rows.map(r=>r.rel),ys=rows.map(r=>r.unit);
+ const x0=Math.min(...xs)-4,x1=Math.max(...xs)+4,ylo=Math.min(...ys),yhi=Math.max(...ys),yp=Math.max(.2,(yhi-ylo)*.18),y0=ylo-yp,y1=yhi+yp;
+ const X=v=>L0+(W-L0-Rr)*(v-x0)/(x1-x0),Y=v=>Tp+(H-Tp-B)*(1-(v-y0)/(y1-y0));
+ let h='';const ys5=[];for(let i=0;i<=4;i++)ys5.push(y0+(y1-y0)*i/4);
+ ys5.forEach(v=>h+=`<line x1="${L0}" x2="${W-Rr}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e3e7ec"/><text x="${L0-8}" y="${Y(v)+4}" fill="#5f6b78" font-size="12" text-anchor="end">${fmt2(v)}</text>`);
+ const stepX=(x1-x0)>40?10:5;for(let v=Math.ceil(x0/stepX)*stepX;v<=x1;v+=stepX)h+=`<text x="${X(v)}" y="${H-B+18}" fill="#5f6b78" font-size="12" text-anchor="middle">${v} d</text>`;
+ h+=`<text x="${(L0+W-Rr)/2}" y="${H-6}" fill="#5f6b78" font-size="12" text-anchor="middle">Días hasta liberar la carga</text>`;
+ const med=a=>{const b=[...a].sort((x,y)=>x-y);return b[Math.floor((b.length-1)/2)];};
+ if(rows.length>2){h+=`<line x1="${X(med(xs))}" x2="${X(med(xs))}" y1="${Tp}" y2="${H-B}" stroke="#9aa4af" stroke-dasharray="4 4"/><line x1="${L0}" x2="${W-Rr}" y1="${Y(med(ys))}" y2="${Y(med(ys))}" stroke="#9aa4af" stroke-dasharray="4 4"/>`;
+  h+=`<text x="${L0+8}" y="${H-B-8}" fill="#2e7d32" font-size="12" font-weight="700">barata y rápida</text>`;}
+ const placed=[];rows.forEach(r=>{const x=X(r.rel),y=Y(r.unit),c=r.hub?'#C77700':'#1E5A9E';
+  h+=`<circle cx="${x}" cy="${y}" r="8" fill="${r.net>=0?'#d6efdc':'#f6d5d1'}" stroke="${c}" stroke-width="2.5"/>`;
+  let ly=y-13;while(placed.some(q=>Math.abs(q[0]-x)<90&&Math.abs(q[1]-ly)<15))ly-=15;placed.push([x,ly]);
+  const anchor=x>W-110?'end':'middle';
+  h+=`<text x="${x}" y="${ly}" fill="${c}" font-size="12.5" font-weight="700" text-anchor="${anchor}" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(r.o.agente)}</text>`;});
+ s.innerHTML=h;
+}
+function drawOffers(){drawOfferInputs();drawOfferResults();}
+window.__offers={get:()=>OFFERS,set:a=>{OFFERS=a;saveOffers();drawOffers();},sim:(o,t)=>simOffer(o,P(),t),msg:t=>{$('ofMsg').textContent=t;if(t)setTimeout(()=>{if($('ofMsg').textContent===t)$('ofMsg').textContent='';},5000);}};
+
 /* ---------- run, play, presets, tabs ---------- */
 let R=null,p=null,curDay=80,playing=false,view='viaje';
 function maxDay(){return Math.ceil(Math.max(R.direct.rel,R.hub.rel))+2;}
 function run(){p=P();R={direct:simulate('direct',p),hub:simulate('hub',p),orig:simulate('orig',p)};
  $('scrub').max=maxDay();if(!playing){curDay=maxDay();$('scrub').value=curDay;}
- render();drawKpis(R);drawInsight(R,p);drawPnl(R);}
+ render();drawKpis(R);drawInsight(R,p);drawPnl(R);if(view==='ofertas')drawOffers();}
 function render(){$('dayLbl').textContent='Día '+Math.floor(curDay);drawMap(R,curDay,p);drawChart(R,curDay,p);}
 $('scrub').addEventListener('input',e=>{playing=false;$('play').textContent='▶ Reproducir viaje';curDay=+e.target.value;render();});
 $('play').addEventListener('click',()=>{if(playing){playing=false;$('play').textContent='▶ Reproducir viaje';return;}
@@ -453,11 +603,11 @@ function preset(name){
  curPreset=name;[...$('presets').children].forEach(b=>b.classList.toggle('on',b.dataset.p===name));run();}
 $('presets').addEventListener('click',e=>{const b=e.target.closest('button');if(b)preset(b.dataset.p);});
 function showView(v){view=v;[...$('tabs').children].forEach(b=>b.classList.toggle('on',b.dataset.v===v));
- ['viaje','pnl','video','sup'].forEach(x=>$('v-'+x).classList.toggle('on',x===v));if(v!=='video'){try{$('vid').pause();}catch(e){}}
- if(v==='viaje'&&map)setTimeout(()=>{map.invalidateSize();render();},30);if(v==='pnl')drawWf(R);}
+ ['viaje','pnl','ofertas','video','sup'].forEach(x=>$('v-'+x).classList.toggle('on',x===v));if(v!=='video'){try{$('vid').pause();}catch(e){}}
+ if(v==='viaje'&&map)setTimeout(()=>{map.invalidateSize();render();},30);if(v==='pnl')drawWf(R);if(v==='ofertas')drawOffers();}
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)showView(b.dataset.v);});
 $('mapView').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!map)return;[...$('mapView').children].forEach(x=>x.classList.toggle('on',x===b));map.flyToBounds(VIEWS[b.dataset.m],{duration:.8});});
-const ro=new ResizeObserver(()=>{if(R){drawChart(R,curDay,p);if(view==='pnl')drawWf(R);}});ro.observe($('chart'));ro.observe($('wf'));
+const ro=new ResizeObserver(()=>{if(R){drawChart(R,curDay,p);if(view==='pnl')drawWf(R);if(view==='ofertas')drawOfferResults();}});ro.observe($('chart'));ro.observe($('wf'));ro.observe($('ofSc'));
 
 /* ---------- guided tour ---------- */
 const TOUR=[
@@ -472,6 +622,7 @@ const TOUR=[
  {sel:'#cardInsight',t:'Lectura',x:'Un resumen en palabras de lo que dicen los números del escenario activo.'},
  {sel:'#cardPnl',t:'Estado de resultados',x:'Los financieros completos de las tres rutas, con % sobre venta y la diferencia Hub − Directo. Puede verlo por contenedor, por unidad o por año, y copiar la tabla a Excel.',prep:()=>showView('pnl')},
  {sel:'#cardWf',t:'Del ingreso al margen neto',x:'La cascada muestra dónde se va el dinero de cada ruta, partida por partida.'},
+ {sel:'#cardRank',t:'Comparar ofertas',x:'Cargue las cotizaciones de varios agentes (a mano o con la plantilla de Excel) y vea el ranking por margen neto, costo por unidad y días. Los rubros que un agente no cotizó se completan con los supuestos y se marcan en ámbar.',prep:()=>showView('ofertas')},
  {sel:'#btnXls',t:'Descargar el Excel',x:'Genera un Excel con el escenario de la pantalla: hoja de supuestos editable, estado de resultados con fórmulas, sensibilidad al flete y notas. Sirve para trabajarlo fuera de la web.',prep:()=>showView('pnl')},
  {sel:'#tabs',t:'Video y supuestos',x:'En Video explicativo está el recorrido narrado del simulador, y en Supuestos y fuentes, cómo calcula el modelo y de dónde salen las referencias.',prep:()=>showView('viaje')},
 ];

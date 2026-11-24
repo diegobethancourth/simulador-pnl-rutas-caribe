@@ -268,9 +268,150 @@
     ];
     notes.forEach(([t, h], i) => { const c = ns.getCell(i + 1, 1); c.value = t; c.alignment = { wrapText: true, vertical: 'top' }; c.font = h ? { bold: true, size: 13, color: { argb: AZUL } } : { size: 11 }; });
 
+    addComparison(wb, st);
     wb.eachSheet(sh => sh.eachRow({ includeEmpty: false }, row => row.eachCell({ includeEmpty: false }, c => { c.font = Object.assign({ name: 'Calibri', size: 11 }, c.font || {}); })));
     return wb;
   }
+
+
+  /* ---------------- Offers: template, upload, comparison sheet ---------------- */
+  const OHDR = [['agente', 'Agente', 22], ['ruta', 'Ruta (Directo / Hub)', 14], ['transb', 'Transbordo / hub', 16], ['flete', 'Flete principal (US$/40HQ)', 14],
+    ['recargos', 'Recargos BAF, PSS, peak (US$)', 13], ['feeder', 'Feeder Colón → Bridgetown (solo hub)', 14], ['zlc', 'Manejo ZLC (solo hub)', 12],
+    ['destino', 'Cargos destino Bridgetown', 12], ['honor', 'Honorario del agente', 12], ['transito', 'Tránsito puerta a puerto (días)', 12],
+    ['libres', 'Días libres en destino', 10], ['freq', 'Salidas por semana', 10], ['bl', 'Un solo B/L (Sí / No)', 11], ['validez', 'Validez de la tarifa', 14]];
+  const COL = i => { let s = ''; i++; while (i) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+  const toCell = (o, k) => k === 'ruta' ? (o.ruta === 'hub' ? 'Hub' : 'Directo') : k === 'bl' ? (o.bl === 'no' ? 'No' : 'Sí') : (o[k] === null || o[k] === undefined || o[k] === '' ? null : o[k]);
+  function inputHeader(sh, row, first) {
+    OHDR.forEach(([, l], i) => { const c = sh.getCell(row, i + 1); c.value = l; c.font = { bold: true, color: { argb: 'FF33414F' } }; c.fill = fill(P_GRIS); c.alignment = { wrapText: true, vertical: 'bottom' }; c.border = { bottom: thin }; });
+    sh.getRow(row).height = 44;
+  }
+  function validations(sh, r0, r1) {
+    for (let r = r0; r <= r1; r++) {
+      sh.getCell(`B${r}`).dataValidation = { type: 'list', allowBlank: true, formulae: ['"Directo,Hub"'] };
+      sh.getCell(`M${r}`).dataValidation = { type: 'list', allowBlank: true, formulae: ['"Sí,No"'] };
+      for (let c = 4; c <= 12; c++) sh.getCell(r, c).numFmt = c >= 10 ? '0' : '"$"#,##0';
+      for (let c = 1; c <= 14; c++) { const x = sh.getCell(r, c); x.fill = fill(INPUT); x.border = { bottom: { style: 'hair', color: { argb: 'FFDDE1E6' } }, right: { style: 'hair', color: { argb: 'FFDDE1E6' } } }; }
+    }
+  }
+  async function buildTemplate() {
+    const wb = new ExcelJS.Workbook(); wb.creator = 'Simulador P&L de rutas';
+    const sh = wb.addWorksheet('Ofertas', { views: [{ state: 'frozen', ySplit: 4, showGridLines: false }], properties: { tabColor: { argb: 'FFF0A020' } } });
+    sh.columns = OHDR.map(([, , w]) => ({ width: w + 2 }));
+    sh.mergeCells('A1:N1'); sh.getCell('A1').value = 'Plantilla de ofertas · flete China → Bridgetown, Barbados (contenedor 40HQ)';
+    sh.getCell('A1').font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } }; sh.getCell('A1').fill = fill(AZUL); sh.getRow(1).height = 24;
+    sh.mergeCells('A2:N2'); sh.getCell('A2').value = 'Una fila por oferta. Montos en US$ por contenedor 40HQ. Deje en blanco lo que el agente no cotizó: el simulador lo completa con sus supuestos y lo marca. Ruta: "Directo" (B/L de la naviera con su transbordo) o "Hub" (Colón · Zona Libre · feeder).';
+    sh.getCell('A2').alignment = { wrapText: true, vertical: 'top' }; sh.getCell('A2').font = { italic: true, size: 10, color: { argb: 'FF5F6B78' } }; sh.getRow(2).height = 30;
+    inputHeader(sh, 4); validations(sh, 5, 34);
+    const offers = (window.__offers && window.__offers.get()) || [];
+    offers.filter(o => !o.ej).forEach((o, i) => OHDR.forEach(([k], j) => { sh.getCell(5 + i, j + 1).value = toCell(o, k); }));
+    wb.eachSheet(x => x.eachRow({ includeEmpty: false }, row => row.eachCell({ includeEmpty: false }, c => { c.font = Object.assign({ name: 'Calibri', size: 11 }, c.font || {}); })));
+    return wb;
+  }
+  async function parseUpload(file) {
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+    const sh = wb.getWorksheet('Ofertas') || wb.getWorksheet('Comparativo de ofertas') || wb.worksheets[0];
+    let hr = 0; sh.eachRow((row, n) => { if (!hr && String(row.getCell(1).value || '').trim().toLowerCase().startsWith('agente')) hr = n; });
+    if (!hr) throw new Error('No encontré la fila de encabezados (columna A = "Agente").');
+    const val = c => { let v = c.value; if (v && typeof v === 'object') v = 'result' in v ? v.result : ('richText' in v ? v.richText.map(t => t.text).join('') : v.text ?? null); return v === undefined ? null : v; };
+    const out = [];
+    for (let r = hr + 1; r <= sh.rowCount; r++) {
+      const row = sh.getRow(r); const ag = val(row.getCell(1)); if (ag === null || String(ag).trim() === '') continue;
+      const o = {};
+      OHDR.forEach(([k], j) => {
+        let v = val(row.getCell(j + 1));
+        if (k === 'ruta') v = /hub|zlc|panam|col[oó]n/i.test(String(v || '')) ? 'hub' : 'direct';
+        else if (k === 'bl') v = /^n/i.test(String(v || '')) ? 'no' : 'si';
+        else if (['agente', 'transb', 'validez'].includes(k)) v = v === null ? '' : (v instanceof Date ? v.toLocaleDateString('es-PA') : String(v));
+        else { v = (v === null || v === '') ? null : Number(String(v).replace(/[$,\s]/g, '')); if (v !== null && isNaN(v)) v = null; }
+        o[k] = v;
+      });
+      out.push(o);
+    }
+    if (!out.length) throw new Error('La plantilla no tiene ofertas.');
+    return out;
+  }
+  function addComparison(wb, st) {
+    const offers = (window.__offers && window.__offers.get()) || []; if (!offers.length) return;
+    const sh = wb.addWorksheet('Comparativo de ofertas', { views: [{ state: 'frozen', ySplit: 4, xSplit: 1, showGridLines: false }], properties: { tabColor: { argb: 'FF2E7D32' } } });
+    const RES = [['O', 'Flete usado', 12], ['P', 'Feeder usado', 11], ['Q', 'Manejo ZLC usado', 11], ['R', 'Destino usado', 11], ['S', 'Honorario usado', 11], ['T', 'Tránsito usado (días)', 10], ['U', 'Días libres usados', 10],
+      ['V', 'Fletes dentro del CIF', 13], ['W', 'Valor CIF', 13], ['X', 'Arancel + levy', 12], ['Y', 'Días hasta liberar', 10], ['Z', 'Demoras', 10], ['AA', 'Costo financiero', 11],
+      ['AB', 'Costo aterrizado', 13], ['AC', 'Ventas', 12], ['AD', 'Margen bruto', 12], ['AE', 'Margen neto', 13], ['AF', '% margen neto', 10], ['AG', 'Costo por unidad', 11], ['AH', 'Flete máximo para objetivo', 13], ['AI', 'Holgura vs. flete máximo', 13], ['AJ', 'Ranking (margen neto)', 10]];
+    sh.columns = OHDR.map(([, , w]) => ({ width: w + 1 })).concat(RES.map(x => ({ width: x[2] + 1 })));
+    sh.mergeCells('A1:AJ1'); sh.getCell('A1').value = 'Comparativo de ofertas · mismo producto, mismos impuestos y mismo escenario';
+    sh.getCell('A1').font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } }; sh.getCell('A1').fill = fill(AZUL); sh.getRow(1).height = 24;
+    sh.mergeCells('A2:AJ2'); sh.getCell('A2').value = `Escenario: ${st.presetLabel}. Columnas A–N: lo que cotizó cada agente (celdas amarillas, editables; en blanco = no cotizado). Columnas O–U: valor usado (cotizado o supuesto de la hoja Supuestos). Columnas V–AJ: resultado con fórmulas.`;
+    sh.getCell('A2').alignment = { wrapText: true, vertical: 'top' }; sh.getCell('A2').font = { italic: true, size: 10, color: { argb: 'FF5F6B78' } }; sh.getRow(2).height = 30;
+    [['A3:N3', 'Lo que cotizó el agente', P_AMBAR], ['O3:U3', 'Valor usado (cotizado o supuesto)', P_GRIS], ['V3:AJ3', 'Resultado por contenedor', P_AZUL]].forEach(([rg, t, c]) => { sh.mergeCells(rg); const x = sh.getCell(rg.split(':')[0]); x.value = t; x.font = { bold: true, color: { argb: AZUL } }; x.fill = fill(c); x.alignment = { horizontal: 'center' }; });
+    inputHeader(sh, 4);
+    RES.forEach(([c, l]) => { const x = sh.getCell(`${c}4`); x.value = l; x.font = { bold: true, color: { argb: 'FF33414F' } }; x.fill = fill(P_GRIS); x.alignment = { wrapText: true, vertical: 'bottom', horizontal: 'right' }; x.border = { bottom: thin }; });
+    const n = offers.length, r0 = 5, r1 = 4 + n;
+    validations(sh, r0, r1);
+    const F = r => {
+      const hub = `$B${r}="Hub"`;
+      return {
+        O: `IF(ISBLANK(D${r}),IF(${hub},Flete_hub_tramo1,Flete_directo),D${r})`,
+        P: `IF(${hub},IF(ISBLANK(F${r}),Feeder,F${r}),0)`,
+        Q: `IF(${hub},IF(ISBLANK(G${r}),ZLC_variable+ZLC_fijo/L_contenedores,G${r}),0)`,
+        R: `IF(ISBLANK(H${r}),Cargos_destino,H${r})`,
+        S: `IF(ISBLANK(I${r}),IF(${hub},Agente_hub_base+Agente_hub_fijo/L_contenedores,Agente_directo),I${r})`,
+        T: `IF(ISBLANK(J${r}),IF(${hub},Hub_dias_Colon+Hub_dias_Colon_BGI,Transito_directo),J${r})`,
+        U: `IF(ISBLANK(K${r}),Dias_libres,K${r})`,
+        V: `IF(${hub},O${r}*(1+T_alza_flete)+T_canal+P${r}*(1+T_temporada)+Q${r},O${r}*(1+T_alza_flete)+ROUND(O${r}*PSS_factor*T_temporada,0)+T_canal)+N(E${r})`,
+        W: `(Unidades*FOB_unidad+V${r})*(1+Seguro)`,
+        X: `W${r}*(Arancel+T_reclasif+Levy)`,
+        Y: `T${r}+IF(T_canal>0,Canal_dias_extra,0)+IF(${hub},ROUND(T_congestion*Hub_absorbe,0)+IF(T_temporada>0,Peak_dias_extra,0),T_congestion)+T_retencion`,
+        Z: `MAX(0,T_retencion-U${r})*Demora_dia`,
+        AA: `Unidades*FOB_unidad*Costo_capital*Y${r}/365`,
+        AB: `W${r}+X${r}+R${r}+S${r}+Z${r}+AA${r}`,
+        AC: `Unidades*(1-T_merma*IF(${hub},1,Merma_directo))*Precio_unidad`,
+        AD: `AC${r}-AB${r}`,
+        AE: `AD${r}-AC${r}*Gastos_op`,
+        AF: `IFERROR(AE${r}/AC${r},0)`,
+        AG: `AB${r}/(Unidades*(1-T_merma*IF(${hub},1,Merma_directo)))`,
+        AH: `(AC${r}*(1-Gastos_op-Margen_obj)-R${r}-S${r}-Z${r}-AA${r})/((1+Seguro)*(1+Arancel+T_reclasif+Levy))-Unidades*FOB_unidad`,
+        AI: `AH${r}-V${r}`,
+        AJ: `RANK(AE${r},$AE$${r0}:$AE$${r1})`
+      };
+    };
+    const sims = offers.map(o => window.__offers.sim(o, true));
+    const ranks = sims.map(x => 1 + sims.filter(y => y.net > x.net).length);
+    offers.forEach((o, i) => {
+      const r = r0 + i, x = sims[i], p = st.p;
+      OHDR.forEach(([k], j) => { sh.getCell(r, j + 1).value = toCell(o, k); });
+      const hub = o.ruta === 'hub', d = k => (o[k] === null || o[k] === undefined || o[k] === '');
+      const N = st.on.l1 ? st.val.l1 : 1;
+      const used = { O: d('flete') ? (hub ? p.fLeg1 : p.fDirect) : +o.flete, P: hub ? (d('feeder') ? p.fFeeder : +o.feeder) : 0, Q: hub ? (d('zlc') ? p.zlcVar + p.zlcFix / N : +o.zlc) : 0,
+        R: x.dest, S: x.fee, T: d('transito') ? (hub ? 45 : 52) : +o.transito, U: d('libres') ? p.free : +o.libres };
+      const res = Object.assign(used, { V: x.freight, W: x.cif, X: x.duties, Y: x.rel, Z: x.dem, AA: x.carry, AB: x.landed, AC: x.sales, AD: x.gross, AE: x.net, AF: x.pctNet, AG: x.unit, AH: x.fmax, AI: x.slack, AJ: ranks[i] });
+      const f = F(r);
+      RES.forEach(([c]) => {
+        const cell = sh.getCell(`${c}${r}`); cell.value = { formula: f[c], result: res[c] };
+        cell.numFmt = ['T', 'U', 'Y', 'AJ'].includes(c) ? '0' : c === 'AF' ? PCT : c === 'AG' ? MONEY2 : MONEY;
+        if (['O', 'P', 'Q', 'R', 'S', 'T', 'U'].includes(c)) cell.font = { color: { argb: 'FF5F6B78' } };
+        if (c === 'AE' || c === 'AJ') cell.font = { bold: true };
+      });
+    });
+    sh.addConditionalFormatting({ ref: `AE${r0}:AE${r1}`, rules: [
+      { type: 'cellIs', operator: 'lessThan', formulae: ['0'], style: { fill: fill('FFF6D5D1'), font: { color: { argb: 'FFC0392B' }, bold: true } } },
+      { type: 'cellIs', operator: 'greaterThanOrEqual', formulae: ['0'], style: { fill: fill('FFD6EFDC'), font: { color: { argb: 'FF2E7D32' }, bold: true } } }] });
+    sh.addConditionalFormatting({ ref: `AJ${r0}:AJ${r1}`, rules: [{ type: 'cellIs', operator: 'equal', formulae: ['1'], style: { fill: fill('FFD6EFDC') } }] });
+    // amber marking of blanks in quoted columns D–K where a default is used
+    sh.addConditionalFormatting({ ref: `D${r0}:K${r1}`, rules: [{ type: 'expression', formulae: [`AND(ISBLANK(D${r0}),COLUMN(D${r0})<>5,OR(COLUMN(D${r0})<>6,$B${r0}="Hub"),OR(COLUMN(D${r0})<>7,$B${r0}="Hub"))`], style: { fill: fill('FFFBE8C8'), font: { color: { argb: 'FF7A4B00' } } } }] });
+    sh.pageSetup = { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
+  }
+  async function downloadTemplate() {
+    const say = t => window.__offers && window.__offers.msg(t);
+    try { say('Preparando la plantilla…'); await loadLib(); const wb = await buildTemplate(); const buf = await wb.xlsx.writeBuffer();
+      const r = await saveBlob('Plantilla_ofertas_China_Barbados.xlsx', new Blob([buf])); say(r === 'declined' ? 'Descarga cancelada' : 'Plantilla descargada');
+    } catch (e) { say('No se pudo generar la plantilla: ' + (e.message || e)); }
+  }
+  async function uploadOffers(file) {
+    const say = t => window.__offers && window.__offers.msg(t);
+    try { say('Leyendo la plantilla…'); await loadLib(); const list = await parseUpload(file); window.__offers.set(list); say(`${list.length} ofertas cargadas`); }
+    catch (e) { say('No se pudo leer el archivo: ' + (e.message || e)); }
+  }
+  window.__buildTemplate = async () => { await loadLib(); return (await buildTemplate()).xlsx.writeBuffer(); };
+  window.__parseOffers = async (buf) => { await loadLib(); return parseUpload({ arrayBuffer: async () => buf }); };
 
   async function saveBlob(name, blob) {
     try {
@@ -306,6 +447,8 @@
   window.__exportXlsx = exportXlsx;
   window.__buildXlsx = async () => { await loadLib(); const wb = await build(window.__sim.getState()); return wb.xlsx.writeBuffer(); };
   document.addEventListener('DOMContentLoaded', () => {
+    const t = document.getElementById('ofTpl'); if (t) t.addEventListener('click', downloadTemplate);
+    const f = document.getElementById('ofFile'); if (f) f.addEventListener('change', e => { const x = e.target.files[0]; if (x) uploadOffers(x); e.target.value = ''; });
     ['btnXls', 'btnXlsTop'].forEach(id => { const b = document.getElementById(id); if (b) b.addEventListener('click', () => { if (id === 'btnXlsTop' && window.__sim) window.__sim.showView('pnl'); exportXlsx(); }); });
   });
 })();

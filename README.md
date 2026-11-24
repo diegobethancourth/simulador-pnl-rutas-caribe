@@ -18,6 +18,7 @@ La línea gris es el **PNL original** (flete presupuestado), como referencia.
 - **Recorrido guiado**: botón *Ayuda y recorrido guiado* arriba a la derecha (se abre solo cuando el usuario lo pide).
 - **Fletes y costos por ruta**: bloque en la columna izquierda para poner las cotizaciones reales de cada ruta.
 - **Descargar Excel**: genera un .xlsx con el escenario de la pantalla: hoja *Supuestos* editable (celdas amarillas), *Estado de resultados* con fórmulas vivas para las tres rutas, *Sensibilidad al flete* y *Notas y fuentes*.
+- **Comparar ofertas**: tabla editable con las cotizaciones de varios agentes, plantilla de Excel para descargar, llenar y subir, ranking ordenable (costo por unidad, margen neto, días, holgura, golpe del escenario), barras de margen neto y gráfico costo vs. días. Lo que un agente no cotizó se completa con los supuestos y se marca en ámbar. El Excel descargable incluye la hoja *Comparativo de ofertas* con fórmulas vivas.
 - **Video explicativo**: pestaña con el video narrado.
 - **Viaje y costos**: mapa con las dos rutas, contenedores que avanzan día a día con su costo acumulado y la línea de costos contra el ingreso.
 - **Estado de resultados (P&L)**: financieros completos de las tres rutas, con % sobre venta y diferencia Hub − Directo, por contenedor, por unidad o por año. Incluye la cascada del ingreso al margen neto.
