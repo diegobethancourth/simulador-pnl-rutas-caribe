@@ -39,6 +39,10 @@ h2{font-size:13.5px;color:var(--azul);margin:14px 0 8px;font-weight:700}h2:first
 .trig .desc{color:var(--gris);font-size:12.5px;margin:3px 0 0 22px;line-height:1.35}
 .trig .rng{display:none;margin:6px 0 0 22px;align-items:center;gap:8px}.trig.on .rng{display:flex}
 .trig .rng input{flex:1;accent-color:var(--azul)}.trig .rng output{min-width:64px;text-align:right;font-weight:700;color:var(--azul)}
+.grp{border:1px solid var(--borde);border-left:4px solid var(--c);background:var(--b);padding:6px 10px 4px;margin:8px 0}
+.gh{font-weight:700;color:var(--c);font-size:13px;margin-bottom:2px}
+.grp .f input{background:#fff}
+video{width:100%;max-height:72vh;background:#000;display:block}
 details{margin-top:12px;border-top:1px solid var(--borde);padding-top:8px}summary{cursor:pointer;color:var(--azul);font-weight:600;font-size:13.5px}
 main{display:flex;flex-direction:column;gap:14px}
 .card{background:var(--papel);border:1px solid var(--borde);padding:12px 16px}
@@ -83,14 +87,14 @@ td.pct{color:var(--gris);font-size:12.5px}
 <header>
   <div><h1>Simulador P&amp;L de rutas · China → Barbados</h1>
   <div class="sub">Costo aterrizado, margen bruto y margen neto por contenedor 40HQ · ruta directa de la naviera vs. hub Panamá (Zona Libre de Colón)</div></div>
-  <div class="der"><span class="fr">Supuestos de mercado · nov-2026</span><button class="hbtn" id="btnTour">Ayuda y recorrido guiado</button></div>
+  <div class="der"><span class="fr">Supuestos de mercado · nov-2026</span><button class="hbtn" id="btnXlsTop">Descargar Excel</button><button class="hbtn" id="btnTour">Ayuda y recorrido guiado</button></div>
 </header>
 <div class="barra">
   <span class="lbl">Escenario</span>
   <div class="seg" id="presets">
     <button data-p="hoy" class="on">Hoy (flete duplicado)</button><button data-p="peak">Temporada alta + congestión</button><button data-p="aduana">Problema en aduana</button><button data-p="cons">Hub consolidado</button>
   </div>
-  <div class="tabs" id="tabs"><button data-v="viaje" class="on">Viaje y costos</button><button data-v="pnl">Estado de resultados (P&amp;L)</button><button data-v="sup">Supuestos y fuentes</button></div>
+  <div class="tabs" id="tabs"><button data-v="viaje" class="on">Viaje y costos</button><button data-v="pnl">Estado de resultados (P&amp;L)</button><button data-v="video">Video explicativo</button><button data-v="sup">Supuestos y fuentes</button></div>
 </div>
 <div class="wrap">
 <aside id="panel">
@@ -104,21 +108,28 @@ td.pct{color:var(--gris);font-size:12.5px}
   <div class="f"><label for="target">Margen neto objetivo (%)</label><input id="target" type="number" value="5"></div>
   <div class="f"><label for="capital">Costo de capital anual (%)</label><input id="capital" type="number" value="10"></div>
   </div>
+  <h2 id="hFletes">Fletes y costos por ruta</h2>
+  <div class="mini" style="margin:-4px 0 6px">Ponga aquí las cotizaciones reales, en US$ por contenedor 40HQ.</div>
+  <div id="fletes">
+   <div class="grp" style="--c:var(--c-dir);--b:var(--p-azul)"><div class="gh">Ruta directa · naviera</div>
+    <div class="f"><label for="fDirect">Tarifa China → Bridgetown (B/L directo)</label><input id="fDirect" type="number" value="9300"></div>
+    <div class="f"><label for="feeD">Honorario del agente</label><input id="feeD" type="number" value="150"></div></div>
+   <div class="grp" style="--c:var(--c-hub);--b:var(--p-ambar)"><div class="gh">Hub Panamá · Zona Libre de Colón</div>
+    <div class="f"><label for="fLeg1">Flete China → Colón (MIT)</label><input id="fLeg1" type="number" value="5000"></div>
+    <div class="f"><label for="fFeeder">Feeder Colón → Bridgetown</label><input id="fFeeder" type="number" value="2200"></div>
+    <div class="f"><label for="zlcVar">Manejo ZLC por contenedor</label><input id="zlcVar" type="number" value="500"></div>
+    <div class="f"><label for="zlcFix">Manejo ZLC fijo por embarque</label><input id="zlcFix" type="number" value="400"></div>
+    <div class="f"><label for="feeHfix">Forwarder: fijo por embarque</label><input id="feeHfix" type="number" value="200"></div></div>
+   <div class="grp" style="--c:#33414f;--b:#f3f5f7"><div class="gh">Destino Bridgetown · ambas rutas</div>
+    <div class="f"><label for="dest">THC, port charge, D/O y broker</label><input id="dest" type="number" value="600"></div>
+    <div class="f"><label for="free">Días libres en puerto</label><input id="free" type="number" value="10"></div>
+    <div class="f"><label for="dmr">Demora por día, 40' (US$)</label><input id="dmr" type="number" value="100"></div></div>
+   <div class="grp" style="--c:var(--c-org);--b:var(--p-gris)"><div class="gh">PNL original · referencia</div>
+    <div class="f"><label for="fOrig">Flete presupuestado</label><input id="fOrig" type="number" value="4650"></div></div>
+  </div>
   <h2>Triggers: eventos de la cadena</h2><div id="triggers"></div>
   <h2>Palancas</h2><div id="levers"></div>
-  <details id="base"><summary>Costos base por ruta (poner cotizaciones reales)</summary>
-    <div class="f"><label for="fDirect">Directo: tarifa naviera China → Bridgetown</label><input id="fDirect" type="number" value="9300"></div>
-    <div class="f"><label for="fOrig">PNL original: tarifa presupuestada</label><input id="fOrig" type="number" value="4650"></div>
-    <div class="f"><label for="fLeg1">Hub: China → Colón (MIT)</label><input id="fLeg1" type="number" value="5000"></div>
-    <div class="f"><label for="fFeeder">Hub: feeder Colón → Bridgetown</label><input id="fFeeder" type="number" value="2200"></div>
-    <div class="f"><label for="zlcVar">Hub: manejo ZLC variable</label><input id="zlcVar" type="number" value="500"></div>
-    <div class="f"><label for="zlcFix">Hub: manejo ZLC fijo por embarque</label><input id="zlcFix" type="number" value="400"></div>
-    <div class="f"><label for="dest">Cargos destino Bridgetown</label><input id="dest" type="number" value="600"></div>
-    <div class="f"><label for="feeD">Honorario agente (directo)</label><input id="feeD" type="number" value="150"></div>
-    <div class="f"><label for="feeHfix">Honorario hub: fijo por embarque</label><input id="feeHfix" type="number" value="200"></div>
-    <div class="f"><label for="free">Días libres en Bridgetown</label><input id="free" type="number" value="10"></div>
-    <div class="f"><label for="dmr">Demora por día, 40' (US$)</label><input id="dmr" type="number" value="100"></div>
-  </details>
+
 </aside>
 
 <main>
@@ -143,7 +154,8 @@ td.pct{color:var(--gris);font-size:12.5px}
     <div class="cardh"><h3>Estado de resultados por ruta</h3>
       <span class="lbl">Ver por</span><div class="seg" id="per"><button data-u="cont" class="on">Contenedor</button><button data-u="unit">Unidad</button><button data-u="year">Año</button></div>
       <span class="lbl" id="yrBox" style="display:none">Contenedores por año <input id="perYear" type="number" value="12" style="width:64px;font:inherit;border:1px solid var(--borde);padding:3px 6px;text-align:right"></span>
-      <div class="sp"><button class="hbtn" style="border-color:var(--borde)" id="copy">Copiar tabla</button><span class="mini" id="copied"></span></div></div>
+      <div class="sp"><span class="mini" id="xlsMsg"></span><button class="play" id="btnXls">Descargar Excel</button></div></div>
+    <div class="mini" style="margin:-2px 0 8px">El Excel sale con los datos y el escenario que tenga cargados en pantalla, con fórmulas vivas: puede cambiar cualquier supuesto en la hoja <b>Supuestos</b> y todo se recalcula.</div>
     <div class="scroll"><table id="pnl"></table></div>
   </div>
   <div class="card" id="cardWf">
@@ -152,6 +164,10 @@ td.pct{color:var(--gris);font-size:12.5px}
   </div>
  </section>
 
+ <section class="view" id="v-video">
+  <div class="card"><div class="cardh"><h3>Video explicativo</h3><span class="mini">2 min 34 s · cómo leer el simulador y qué muestra cada escenario</span></div>
+   <video id="vid" controls preload="metadata" poster="docs/poster.jpg" src="docs/Simulador_PNL_rutas_China_Barbados.mp4"></video></div>
+ </section>
  <section class="view" id="v-sup">
   <div class="card"><div class="cardh"><h3>Cómo calcula el modelo</h3></div>
    <ul class="src">
@@ -181,6 +197,7 @@ td.pct{color:var(--gris);font-size:12.5px}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="land.js"></script>
+<script src="export.js"></script>
 <script>
 {
 const $=id=>document.getElementById(id);
@@ -414,7 +431,6 @@ function drawWf(R){
 $('per').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;per=b.dataset.u;[...$('per').children].forEach(x=>x.classList.toggle('on',x===b));$('yrBox').style.display=per==='year'?'':'none';drawPnl(R);});
 $('perYear').addEventListener('input',()=>drawPnl(R));
 $('wfRoute').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;wfR=b.dataset.r;[...$('wfRoute').children].forEach(x=>x.classList.toggle('on',x===b));drawWf(R);});
-$('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(lastCsv);$('copied').textContent='Copiada: pégala en Excel';}catch(e){$('copied').textContent='Tu navegador no permitió copiar';}});
 
 /* ---------- run, play, presets, tabs ---------- */
 let R=null,p=null,curDay=80,playing=false,view='viaje';
@@ -429,14 +445,15 @@ $('play').addEventListener('click',()=>{if(playing){playing=false;$('play').text
  const tick=now=>{if(!playing)return;curDay+=(now-last)/1000*7;last=now;if(curDay>=m){curDay=m;playing=false;$('play').textContent='▶ Reproducir viaje';}
   $('scrub').value=curDay;render();if(playing)requestAnimationFrame(tick);};requestAnimationFrame(tick);});
 document.querySelectorAll('aside .f input').forEach(i=>i.addEventListener('input',()=>{clearPreset();run();}));
-function clearPreset(){[...$('presets').children].forEach(b=>b.classList.remove('on'));}
+let curPreset='hoy';
+function clearPreset(){curPreset='';[...$('presets').children].forEach(b=>b.classList.remove('on'));}
 function preset(name){
  [...TRIGGERS,...LEVERS].forEach(t=>{setOn(t.id,false,true);setVal(t.id,t.val);});
  ({peak:['t2','t3'],aduana:['t5','t6'],cons:['l1','l2']}[name]||[]).forEach(id=>setOn(id,true,true));
- [...$('presets').children].forEach(b=>b.classList.toggle('on',b.dataset.p===name));run();}
+ curPreset=name;[...$('presets').children].forEach(b=>b.classList.toggle('on',b.dataset.p===name));run();}
 $('presets').addEventListener('click',e=>{const b=e.target.closest('button');if(b)preset(b.dataset.p);});
 function showView(v){view=v;[...$('tabs').children].forEach(b=>b.classList.toggle('on',b.dataset.v===v));
- ['viaje','pnl','sup'].forEach(x=>$('v-'+x).classList.toggle('on',x===v));
+ ['viaje','pnl','video','sup'].forEach(x=>$('v-'+x).classList.toggle('on',x===v));if(v!=='video'){try{$('vid').pause();}catch(e){}}
  if(v==='viaje'&&map)setTimeout(()=>{map.invalidateSize();render();},30);if(v==='pnl')drawWf(R);}
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)showView(b.dataset.v);});
 $('mapView').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!map)return;[...$('mapView').children].forEach(x=>x.classList.toggle('on',x===b));map.flyToBounds(VIEWS[b.dataset.m],{duration:.8});});
@@ -446,6 +463,7 @@ const ro=new ResizeObserver(()=>{if(R){drawChart(R,curDay,p);if(view==='pnl')dra
 const TOUR=[
  {sel:'#presets',t:'Escenarios listos',x:'Empiece aquí. Cada botón carga una situación: el flete de hoy, temporada alta con congestión, un problema en aduana o el hub consolidado.'},
  {sel:'#negocio',t:'Producto y negocio',x:'Unidades, costo FOB, precio de venta, arancel y gastos operativos. Ponga los datos reales del producto; todo el modelo se recalcula al momento.'},
+ {sel:'#fletes',t:'Fletes y costos por ruta',x:'Aquí se ingresan las cotizaciones: la tarifa directa de la naviera, el flete China → Colón, el feeder, el manejo en la Zona Libre y los cargos de destino. Cada ruta tiene su color.'},
  {sel:'#triggers',t:'Triggers de la cadena',x:'Eventos que pasan en la vida real. Al activar uno, la tarjeta se pinta en rojo, aparece una alerta en el mapa y se mueve la línea de costos. La barra ajusta la intensidad.'},
  {sel:'#levers',t:'Palancas',x:'Lo que la empresa puede hacer: consolidar varios contenedores por embarque en la Zona Libre y negociar tarifa por volumen.'},
  {sel:'#kpis',t:'Resultado por ruta',x:'Margen neto, margen bruto, costo por unidad, días y el flete máximo que todavía cumple el margen objetivo. Azul es la ruta directa, ámbar el hub Panamá, gris el PNL original.'},
@@ -454,7 +472,8 @@ const TOUR=[
  {sel:'#cardInsight',t:'Lectura',x:'Un resumen en palabras de lo que dicen los números del escenario activo.'},
  {sel:'#cardPnl',t:'Estado de resultados',x:'Los financieros completos de las tres rutas, con % sobre venta y la diferencia Hub − Directo. Puede verlo por contenedor, por unidad o por año, y copiar la tabla a Excel.',prep:()=>showView('pnl')},
  {sel:'#cardWf',t:'Del ingreso al margen neto',x:'La cascada muestra dónde se va el dinero de cada ruta, partida por partida.'},
- {sel:'#base',t:'Costos base por ruta',x:'Aquí se reemplazan los supuestos por las cotizaciones reales: feeder, manejo en ZLC, cargos de destino. Es el siguiente paso para cerrar el análisis.',prep:()=>{showView('viaje');$('base').open=true;}},
+ {sel:'#btnXls',t:'Descargar el Excel',x:'Genera un Excel con el escenario de la pantalla: hoja de supuestos editable, estado de resultados con fórmulas, sensibilidad al flete y notas. Sirve para trabajarlo fuera de la web.',prep:()=>showView('pnl')},
+ {sel:'#tabs',t:'Video y supuestos',x:'En Video explicativo está el recorrido narrado del simulador, y en Supuestos y fuentes, cómo calcula el modelo y de dónde salen las referencias.',prep:()=>showView('viaje')},
 ];
 let ti=0;
 function startTour(){ti=0;$('tour').classList.add('open');stepTour();}
@@ -477,9 +496,7 @@ addEventListener('keydown',e=>{if(!$('tour').classList.contains('open'))return;i
 initMap();
 const q=new URLSearchParams(location.hash.slice(1));
 preset(q.get('preset')||'hoy');
-let seen=false;try{seen=!!localStorage.getItem('pnlTourSeen');}catch(e){}
-if(!seen&&!q.get('notour'))setTimeout(startTour,900);
-window.__sim={preset,setOn,setVal,run,showView,startTour,endTour,get R(){return R},get map(){return map},
+window.__sim={getState:()=>({p:P(),on:{...state.on},val:{...state.val},R,preset:curPreset,presetLabel:curPreset?[...$('presets').children].find(b=>b.dataset.p===curPreset).textContent:'Personalizado',perYear:+$('perYear').value||12}),preset,setOn,setVal,run,showView,startTour,endTour,get R(){return R},get map(){return map},
  setDay:d=>{curDay=d;$('scrub').value=d;render();},tourStep:i=>{ti=i;$('tour').classList.add('open');stepTour();},mapView:m=>{[...$('mapView').children].forEach(x=>x.classList.toggle('on',x.dataset.m===m));map.fitBounds(VIEWS[m]);}};
 }
 </script>

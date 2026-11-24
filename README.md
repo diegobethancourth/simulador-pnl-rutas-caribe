@@ -15,12 +15,14 @@ La línea gris es el **PNL original** (flete presupuestado), como referencia.
 
 ## Qué tiene
 
-- **Recorrido guiado**: botón *Ayuda y recorrido guiado* arriba a la derecha. Se abre solo la primera vez.
+- **Recorrido guiado**: botón *Ayuda y recorrido guiado* arriba a la derecha (se abre solo cuando el usuario lo pide).
+- **Fletes y costos por ruta**: bloque en la columna izquierda para poner las cotizaciones reales de cada ruta.
+- **Descargar Excel**: genera un .xlsx con el escenario de la pantalla: hoja *Supuestos* editable (celdas amarillas), *Estado de resultados* con fórmulas vivas para las tres rutas, *Sensibilidad al flete* y *Notas y fuentes*.
+- **Video explicativo**: pestaña con el video narrado.
 - **Viaje y costos**: mapa con las dos rutas, contenedores que avanzan día a día con su costo acumulado y la línea de costos contra el ingreso.
-- **Estado de resultados (P&L)**: financieros completos de las tres rutas, con % sobre venta y diferencia Hub − Directo, por contenedor, por unidad o por año. Incluye la cascada del ingreso al margen neto y un botón para copiar la tabla a Excel.
+- **Estado de resultados (P&L)**: financieros completos de las tres rutas, con % sobre venta y diferencia Hub − Directo, por contenedor, por unidad o por año. Incluye la cascada del ingreso al margen neto.
 - **Triggers**: alza de flete, congestión en el transbordo, temporada alta del feeder, restricción del Canal, retención aduanal, reclasificación arancelaria y merma.
 - **Palancas**: consolidar contenedores por embarque en ZLC y tarifa negociada por volumen.
-- **Costos base por ruta**: para poner las cotizaciones reales.
 
 ## Supuestos del modelo
 
@@ -29,4 +31,4 @@ La línea gris es el **PNL original** (flete presupuestado), como referencia.
 - Referencias de nov-2026: ~US$9,100–9,550 por 40HQ China → Barbados (~52 días); US$5,000 por 40HQ Shanghái → Manzanillo, Panamá. El feeder Colón → Bridgetown y el manejo en ZLC son supuestos **por cotizar**.
 - Los números del producto (2,500 unidades, FOB US$8, venta US$16) son de ejemplo.
 
-Archivos: `index.html` (la herramienta), `land.js` (costas para el mapa sin conexión), `leaflet.css`. El mapa usa Leaflet y OpenStreetMap.
+Archivos: `index.html` (la herramienta), `export.js` (generador del Excel, usa ExcelJS en `exceljs.min.js`), `land.js` (costas para el mapa sin conexión), `leaflet.css`. El mapa usa Leaflet y OpenStreetMap.
